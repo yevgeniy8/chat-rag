@@ -1,0 +1,10 @@
+2025-11-10 20:50:41.427 | INFO     | app:startup_event:53 - Starting LLM Chat backend
+2025-11-10 20:50:41.427 | INFO     | app:startup_event:60 - Vector store ready (model loads on demand)
+2025-11-10 20:51:00.867 | INFO     | routers.ingest:upload_file:45 - Saving upload %s to %s
+2025-11-10 20:51:00.876 | INFO     | services.loader:load_document:44 - Loading document from %s
+2025-11-10 20:51:01.576 | INFO     | services.embeddings:_get_model:24 - Loading SentenceTransformer model: %s
+2025-11-10 20:51:06.416 | INFO     | services.vector_store:_ensure_index:44 - Creating new FAISS index of dimension %d
+2025-11-10 20:53:12.687 | INFO     | routers.chat:chat:31 - Processing RAG chat request
+2025-11-10 20:53:13.828 | INFO     | services.llm:generate_with_context:54 - Generating RAG response with %d context characters
+2025-11-10 21:03:01.626 | INFO     | routers.chat:chat:27 - Processing baseline chat request
+2025-11-10 21:03:01.632 | INFO     | services.llm:generate_baseline:32 - Generating baseline response
