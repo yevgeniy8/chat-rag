@@ -18,9 +18,9 @@ export const fetchFiles = createAsyncThunk<FileRecord[]>('files/fetch', async ()
   return await fetchFilesApi();
 });
 
-export const deleteFile = createAsyncThunk<string, string>('files/delete', async (name: string) => {
-  await removeFileApi(name);
-  return name;
+export const deleteFile = createAsyncThunk<string, string>('files/delete', async (fileId: string) => {
+  await removeFileApi(fileId);
+  return fileId;
 });
 
 const filesSlice = createSlice({
@@ -49,7 +49,7 @@ const filesSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteFile.fulfilled, (state, action) => {
-        state.items = state.items.filter((item) => item.name !== action.payload);
+        state.items = state.items.filter((item) => item.file_id !== action.payload);
       })
       .addCase(deleteFile.rejected, (state, action) => {
         state.error = action.error.message ?? 'Unable to delete file';

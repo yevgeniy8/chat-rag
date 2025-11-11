@@ -2,11 +2,14 @@
  * Thesis Context: Files page guides participants through corpus ingestion, clarifying how raw documents feed
  * the RAG pipeline and ensuring repeatable data preparation across trials.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import FileUpload from '../components/FileUpload';
 import FilesList from '../components/FilesList';
+import { useAppDispatch } from '../store/hooks';
+import { fetchFiles } from '../store/filesSlice';
 
 const FilesPage: React.FC = () => {
+  const dispatch = useAppDispatch();
   const [lastIngest, setLastIngest] = useState<{ fileName: string; chunks: number }[] | null>(null);
   const summary = useMemo(() => {
     if (!lastIngest || lastIngest.length === 0) {
@@ -16,6 +19,10 @@ const FilesPage: React.FC = () => {
     const names = lastIngest.map((item) => `${item.fileName} (${item.chunks})`).join(', ');
     return { totalChunks, names, count: lastIngest.length };
   }, [lastIngest]);
+
+  useEffect(() => {
+    void dispatch(fetchFiles());
+  }, [dispatch]);
 
   return (
     <div className="space-y-6">
