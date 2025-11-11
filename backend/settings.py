@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     embedding_model: str = Field(
-        default="sentence-transformers/all-MiniLM-L6-v2", env="EMBEDDING_MODEL"
+        default="sentence-transformers/all-mpnet-base-v2", env="EMBEDDING_MODEL"
     )
     faiss_index_path: Path = Field(
         default=Path("backend/data/vectors/index.faiss"), env="FAISS_INDEX_PATH"
@@ -33,9 +33,9 @@ class Settings(BaseSettings):
         default=Path("backend/data/vectors/meta.jsonl"), env="METADATA_PATH"
     )
     files_dir: Path = Field(default=Path("backend/data/files"), env="FILES_DIR")
-    chunk_size: int = Field(default=800, env="CHUNK_SIZE")
+    chunk_size: int = Field(default=400, env="CHUNK_SIZE")
     chunk_overlap: int = Field(default=120, env="CHUNK_OVERLAP")
-    default_top_k: int = Field(default=4, env="TOP_K")
+    default_top_k: int = Field(default=8, env="TOP_K")
 
     class Config:
         env_file = ".env"

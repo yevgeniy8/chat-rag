@@ -130,15 +130,19 @@ const FilesList: React.FC = () => {
               ) : previewError ? (
                 <div className="flex h-full items-center justify-center text-sm text-red-500">{previewError}</div>
               ) : previewData ? (
-                previewData.kind === 'pdf' ? (
-                  <iframe
-                    title={previewFile}
-                    src={previewData.preview_url ? resolvePreviewUrl(previewData.preview_url) : buildRawFileUrl(previewFile)}
-                    className="h-full w-full rounded-lg"
-                  />
-                ) : (
-                  <iframe title={previewFile} srcDoc={previewData.html ?? ''} className="h-full w-full rounded-lg" />
-                )
+                (() => {
+                  const lower = previewFile.toLowerCase();
+                  const fileUrl = buildRawFileUrl(previewFile);
+                  if (lower.endsWith('.pdf')) {
+                    const src = previewData.preview_url ? resolvePreviewUrl(previewData.preview_url) : fileUrl;
+                    return <iframe title={previewFile} src={src} className="h-full w-full rounded-lg" />;
+                  }
+                  if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
+                    const googleUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+                    return <iframe title={previewFile} src={googleUrl} className="h-full w-full rounded-lg" />;
+                  }
+                  return <iframe title={previewFile} srcDoc={previewData.html ?? ''} className="h-full w-full rounded-lg" />;
+                })()
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-gray-600">Preview unavailable.</div>
               )}
