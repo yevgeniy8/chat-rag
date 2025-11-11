@@ -112,6 +112,7 @@ export const chatSlice = createSlice({
       state.currentSessionId = session.id;
     },
     switchSession: (state, action: PayloadAction<string>) => {
+      console.log("state", state)
       const targetId = action.payload;
       if (state.sessions.some((session) => session.id === targetId)) {
         state.currentSessionId = targetId;

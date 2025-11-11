@@ -8,7 +8,7 @@ const apiBaseUrl = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:8000'
 
 export const apiClient = axios.create({
   baseURL: apiBaseUrl,
-  timeout: 20000
+  // timeout: 20000
 });
 
 apiClient.interceptors.response.use(

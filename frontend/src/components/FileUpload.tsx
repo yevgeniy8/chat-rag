@@ -57,6 +57,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
         inputRef.current.value = '';
       }
     } catch (uploadError) {
+      console.log("uploadError", uploadError)
       setError('Ingestion failed. Please inspect backend logs for diagnostic replication.');
       setStatus('Upload interrupted. Some documents may not be indexed.');
     } finally {

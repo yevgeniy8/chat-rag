@@ -77,7 +77,7 @@ const FilesList: React.FC = () => {
           onClick={closePreview}
         >
           <div
-            className="relative h-[80vh] w-full max-w-3xl rounded-lg bg-white shadow-lg"
+            className="relative h-[95vh] w-full max-w-3xl rounded-lg bg-white shadow-lg"
             onClick={(event) => event.stopPropagation()}
           >
             <button
