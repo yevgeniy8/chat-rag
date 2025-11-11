@@ -1,30 +1,48 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { ChatDualResponse, ChatSession, ChatSessionMessage } from '../types/api';
+import { PayloadAction, createSlice, nanoid } from '@reduxjs/toolkit';
+import type { RetrievedChunk } from '../types/api';
+
+export type ChatRole = 'user' | 'assistant';
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  timestamp: string;
+  context?: RetrievedChunk[];
+  avgSimilarity?: number | null;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+}
 
 export interface ChatState {
   sessions: ChatSession[];
   currentSessionId: string | null;
-  currentComparison: ChatDualResponse | null;
 }
 
-const STORAGE_KEY = 'chat_sessions_v2';
+const STORAGE_KEY = 'chat_sessions_v1';
 
-const sortSessions = (sessions: ChatSession[]): ChatSession[] => {
-  return sessions.slice().sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
+const truncateTitle = (text: string): string => {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return 'Untitled session';
+  }
+  return trimmed.length > 60 ? `${trimmed.slice(0, 57)}…` : trimmed;
 };
 
-const buildComparisonFromSession = (session: ChatSession | undefined): ChatDualResponse | null => {
-  if (!session || session.messages.length === 0) {
-    return null;
-  }
-  const lastMessage = session.messages[session.messages.length - 1];
+const createSession = (title?: string): ChatSession => {
+  const now = new Date().toISOString();
   return {
-    session_id: session.session_id,
-    prompt: lastMessage.prompt,
-    timestamp: lastMessage.timestamp,
-    baseline: lastMessage.baseline,
-    rag: lastMessage.rag,
-    metrics: session.metrics
+    id: nanoid(),
+    title: title ?? 'New session',
+    createdAt: now,
+    updatedAt: now,
+    messages: []
   };
 };
 
@@ -32,21 +50,15 @@ const sanitizeState = (state: ChatState | undefined): ChatState | undefined => {
   if (!state || !Array.isArray(state.sessions)) {
     return undefined;
   }
-  const validSessions = state.sessions.filter((session) => Array.isArray(session.messages));
-  if (validSessions.length === 0) {
-    return { sessions: [], currentSessionId: null, currentComparison: null };
+  const sessions = state.sessions.filter((session) => Array.isArray(session.messages));
+  if (sessions.length === 0) {
+    return undefined;
   }
-  const sorted = sortSessions(validSessions);
-  const currentSessionId = sorted.some((session) => session.session_id === state.currentSessionId)
+  sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  const currentSessionId = sessions.some((session) => session.id === state.currentSessionId)
     ? state.currentSessionId
-    : sorted[0].session_id;
-  const activeSession = sorted.find((session) => session.session_id === currentSessionId);
-  const comparison = state.currentComparison ?? buildComparisonFromSession(activeSession);
-  return {
-    sessions: sorted,
-    currentSessionId,
-    currentComparison: comparison ?? null
-  };
+    : sessions[0].id;
+  return { sessions, currentSessionId };
 };
 
 export const loadChatState = (): ChatState | undefined => {
@@ -77,85 +89,51 @@ export const persistChatState = (state: ChatState): void => {
   }
 };
 
-const initialState: ChatState = loadChatState() ?? {
-  sessions: [],
-  currentSessionId: null,
-  currentComparison: null
+const fallbackState = (): ChatState => {
+  const session = createSession();
+  return { sessions: [session], currentSessionId: session.id };
 };
 
-const chatSlice = createSlice({
+const initialState: ChatState = loadChatState() ?? fallbackState();
+
+interface AddMessagePayload {
+  sessionId: string;
+  message: ChatMessage;
+}
+
+export const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
-    setSessions: (state, action: PayloadAction<ChatSession[]>) => {
-      const sessions = sortSessions(action.payload);
-      state.sessions = sessions;
-      if (sessions.length === 0) {
-        state.currentSessionId = null;
-        state.currentComparison = null;
+    startSession: (state) => {
+      const sessionIndex = state.sessions.length + 1;
+      const session = createSession(`Session ${sessionIndex}`);
+      state.sessions = [session, ...state.sessions];
+      state.currentSessionId = session.id;
+    },
+    switchSession: (state, action: PayloadAction<string>) => {
+      console.log("state", state)
+      const targetId = action.payload;
+      if (state.sessions.some((session) => session.id === targetId)) {
+        state.currentSessionId = targetId;
+      }
+    },
+    addMessage: (state, action: PayloadAction<AddMessagePayload>) => {
+      const { sessionId, message } = action.payload;
+      const session = state.sessions.find((item) => item.id === sessionId);
+      if (!session) {
         return;
       }
-      const currentId = state.currentSessionId;
-      const active = sessions.find((session) => session.session_id === currentId) ?? sessions[0];
-      state.currentSessionId = active.session_id;
-      state.currentComparison = buildComparisonFromSession(active);
-    },
-    setCurrentSession: (state, action: PayloadAction<string | null>) => {
-      state.currentSessionId = action.payload;
-      const active = state.sessions.find((session) => session.session_id === action.payload);
-      state.currentComparison = buildComparisonFromSession(active);
-    },
-    applyComparisonResult: (state, action: PayloadAction<ChatDualResponse>) => {
-      const result = action.payload;
-      const message: ChatSessionMessage = {
-        prompt: result.prompt,
-        timestamp: result.timestamp,
-        baseline: result.baseline,
-        rag: result.rag
-      };
-      const existing = state.sessions.find((session) => session.session_id === result.session_id);
-      if (existing) {
-        existing.messages = [...existing.messages, message];
-        existing.updated_at = result.metrics.updated_at;
-        existing.metrics = result.metrics;
-      } else {
-        const newSession: ChatSession = {
-          session_id: result.session_id,
-          created_at: result.metrics.created_at,
-          updated_at: result.metrics.updated_at,
-          messages: [message],
-          metrics: result.metrics
-        };
-        state.sessions = [newSession, ...state.sessions];
+      session.messages.push(message);
+      session.updatedAt = message.timestamp;
+      if (message.role === 'user' && session.messages.filter((m) => m.role === 'user').length === 1) {
+        session.title = truncateTitle(message.content);
       }
-      state.sessions = sortSessions(state.sessions);
-      state.currentSessionId = result.session_id;
-      state.currentComparison = result;
-    },
-    deleteSession: (state, action: PayloadAction<string>) => {
-      const targetId = action.payload;
-      state.sessions = state.sessions.filter((session) => session.session_id !== targetId);
-      if (state.currentSessionId === targetId) {
-        if (state.sessions.length === 0) {
-          state.currentSessionId = null;
-          state.currentComparison = null;
-        } else {
-          state.currentSessionId = state.sessions[0].session_id;
-          state.currentComparison = buildComparisonFromSession(state.sessions[0]);
-        }
-      } else if (state.currentComparison && state.currentComparison.session_id === targetId) {
-        state.currentComparison = null;
-      }
-    },
-    clearAllSessions: (state) => {
-      state.sessions = [];
-      state.currentSessionId = null;
-      state.currentComparison = null;
+      state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
     }
   }
 });
 
-export const { setSessions, setCurrentSession, applyComparisonResult, deleteSession, clearAllSessions } =
-  chatSlice.actions;
+export const { startSession, switchSession, addMessage } = chatSlice.actions;
 
 export default chatSlice.reducer;

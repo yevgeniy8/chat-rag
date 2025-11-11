@@ -4,68 +4,34 @@ Pydantic models used by the chat endpoint to validate requests and responses."""
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import List, Literal, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-class ChatModeResponse(BaseModel):
-    """Single model output enriched with latency metadata."""
-
-    message: str
-    latency: int
-    mode: Literal["baseline", "rag"]
-    semantic_similarity: Optional[float] = Field(
-        default=None, description="Semantic similarity to the paired response"
-    )
-
-
-class ChatEvalMetrics(BaseModel):
-    """Aggregate metrics stored alongside a chat session."""
-
-    baseline_latency: int = Field(..., description="Latency for the baseline model in ms")
-    rag_latency: int = Field(..., description="Latency for the RAG model in ms")
-    semantic_similarity: float = Field(..., description="Cosine similarity between model outputs")
-    created_at: datetime
-    updated_at: datetime
-
-
-class ChatMessageRecord(BaseModel):
-    """A single conversational turn recorded in a session."""
-
-    prompt: str
-    timestamp: datetime
-    baseline: ChatModeResponse
-    rag: ChatModeResponse
-
-
-class ChatSession(BaseModel):
-    """Persistent record of a comparison session."""
-
-    session_id: str
-    created_at: datetime
-    updated_at: datetime
-    messages: List[ChatMessageRecord]
-    metrics: ChatEvalMetrics
-
-
-class ChatDualResponse(BaseModel):
-    """Response returned when both baseline and RAG answers are generated."""
-
-    session_id: str
-    prompt: str
-    timestamp: datetime
-    baseline: ChatModeResponse
-    rag: ChatModeResponse
-    metrics: ChatEvalMetrics
-
 
 class ChatRequest(BaseModel):
-    """Incoming user prompt with optional session metadata."""
+    """Incoming user question and configuration flags."""
 
     message: str
-    session_id: Optional[str] = Field(default=None, description="Existing session identifier")
+    use_rag: bool
     top_k: Optional[int] = Field(default=None, description="How many chunks to retrieve")
+
+
+class RetrievedContext(BaseModel):
+    """Metadata for a single retrieved chunk."""
+
+    file: str
+    snippet: str
+    score: float
+
+
+class ChatResponse(BaseModel):
+    """Structured response returned to the frontend."""
+
+    message: str
+    mode: str
+    retrieved_context: List[RetrievedContext]
+    avg_similarity: float
 
 
 class CompareRequest(BaseModel):
