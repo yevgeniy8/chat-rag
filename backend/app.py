@@ -18,6 +18,7 @@ production ready and easy to reason about for thesis documentation.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -27,6 +28,8 @@ from loguru import logger
 from routers import chat, files, health, ingest
 from services.vector_store import get_vector_store
 from settings import settings
+
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 app = FastAPI(title="LLM Chat with RAG vs No-RAG", version="1.0.0")
 

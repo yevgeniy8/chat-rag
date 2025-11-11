@@ -1,5 +1,5 @@
 import { PayloadAction, createSlice, nanoid } from '@reduxjs/toolkit';
-import type { RetrievedChunk } from '../types/api';
+import type { RetrievedContext } from '../types/api';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -8,7 +8,7 @@ export interface ChatMessage {
   role: ChatRole;
   content: string;
   timestamp: string;
-  context?: RetrievedChunk[];
+  context?: RetrievedContext[];
   avgSimilarity?: number | null;
 }
 

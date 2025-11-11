@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { buildFilePreviewUrl } from '../api/files';
+import axios from 'axios';
+import { buildRawFileUrl, fetchFilePreview } from '../api/files';
+import { apiClient } from '../api/client';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { deleteFile, fetchFiles } from '../store/filesSlice';
+import { FilePreviewResponse } from '../types/api';
 
 const FilesList: React.FC = () => {
   const dispatch = useAppDispatch();
   const { items, isLoading, error } = useAppSelector((state) => state.files);
   const [previewFile, setPreviewFile] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<FilePreviewResponse | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const handleDelete = async (fileName: string) => {
@@ -20,7 +26,38 @@ const FilesList: React.FC = () => {
     }
   };
 
-  const closePreview = () => setPreviewFile(null);
+  const resolvePreviewUrl = (path: string): string => {
+    if (/^https?:/i.test(path)) {
+      return path;
+    }
+    const base = apiClient.defaults.baseURL ?? '';
+    return `${base}${path}`;
+  };
+
+  const openPreview = async (fileName: string) => {
+    setPreviewFile(fileName);
+    setPreviewData(null);
+    setPreviewError(null);
+    setIsPreviewLoading(true);
+    try {
+      const data = await fetchFilePreview(fileName);
+      setPreviewData(data);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 415) {
+        setPreviewError('Preview not available for this file format.');
+      } else {
+        setPreviewError('Unable to load preview. Please try again.');
+      }
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewFile(null);
+    setPreviewData(null);
+    setPreviewError(null);
+  };
 
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -48,7 +85,7 @@ const FilesList: React.FC = () => {
               <li key={file.name} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <button
                   type="button"
-                  onClick={() => setPreviewFile(file.name)}
+                  onClick={() => openPreview(file.name)}
                   className="flex-1 text-left font-medium text-blue-600 hover:underline"
                 >
                   {file.name}
@@ -87,7 +124,25 @@ const FilesList: React.FC = () => {
             >
               Close
             </button>
-            <iframe title={previewFile} src={buildFilePreviewUrl(previewFile)} className="h-full w-full rounded-lg"></iframe>
+            <div className="h-full w-full rounded-lg">
+              {isPreviewLoading ? (
+                <div className="flex h-full items-center justify-center text-sm text-gray-600">Loading preview…</div>
+              ) : previewError ? (
+                <div className="flex h-full items-center justify-center text-sm text-red-500">{previewError}</div>
+              ) : previewData ? (
+                previewData.kind === 'pdf' ? (
+                  <iframe
+                    title={previewFile}
+                    src={previewData.preview_url ? resolvePreviewUrl(previewData.preview_url) : buildRawFileUrl(previewFile)}
+                    className="h-full w-full rounded-lg"
+                  />
+                ) : (
+                  <iframe title={previewFile} srcDoc={previewData.html ?? ''} className="h-full w-full rounded-lg" />
+                )
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-gray-600">Preview unavailable.</div>
+              )}
+            </div>
           </div>
         </div>
       )}

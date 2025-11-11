@@ -8,6 +8,8 @@ numpy
 pandas
 pypdf
 docx2txt
+textract
+mammoth
 openai
 tqdm
 loguru

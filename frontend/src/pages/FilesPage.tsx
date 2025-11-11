@@ -22,8 +22,8 @@ const FilesPage: React.FC = () => {
       <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-800">Prepare Retrieval Corpus</h2>
         <p className="mt-2 text-sm text-gray-600">
-          Upload thesis datasets or evaluation documents here. The system streams the file to the backend, indexes
-          it into FAISS, and reports the resulting chunk count for transparency.
+          Upload PDFs, Word documents (.docx and .doc), or plaintext files here. The system streams the file to the
+          backend, indexes it into FAISS, and reports the resulting chunk count for transparency.
         </p>
       </section>
       <FileUpload onIngestComplete={setLastIngest} />
