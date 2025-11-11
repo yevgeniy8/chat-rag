@@ -71,7 +71,7 @@ const Home: React.FC = () => {
             differences between retrieval-on and retrieval-off runs.
           </p>
           <p className="font-medium text-slate-800">
-            Ready to explore? Jump into any of the experiences below—each one is crafted to reveal how grounding
+            Ready to explore? Jump into any of the experiences below – each one is crafted to reveal how grounding
             reshapes AI output.
           </p>
         </div>
@@ -104,7 +104,7 @@ const Home: React.FC = () => {
         <p className="mt-2 text-sm leading-relaxed text-slate-200">
           Uploading files seeds the vector store, the chat interface orchestrates retrieval and generation, and the
           comparison arena helps you document the lift that grounded answers provide. Experiment, iterate, and
-          capture insights that move your thesis—or product roadmap—forward.
+          capture insights that move your thesis – or product roadmap – forward.
         </p>
       </footer>
     </div>

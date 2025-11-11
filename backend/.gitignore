@@ -1,1 +1,5 @@
 .env
+/backend/routers/__pycache__
+# User-uploaded files
+backend/backend/data/files/
+backend/backend/data/vectors/

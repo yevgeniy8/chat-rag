@@ -42,3 +42,17 @@
 2025-11-11 16:45:14.632 | INFO     | services.llm:generate_with_context:54 - Generating RAG response with %d context characters
 2025-11-11 16:51:33.778 | INFO     | routers.chat:chat:38 - Processing RAG chat request
 2025-11-11 16:51:34.404 | INFO     | services.llm:generate_with_context:54 - Generating RAG response with %d context characters
+2025-11-11 20:56:58.504 | INFO     | app:startup_event:56 - Starting LLM Chat backend
+2025-11-11 20:56:58.511 | INFO     | services.vector_store:load:36 - Loaded FAISS index with %d vectors
+2025-11-11 20:56:58.556 | INFO     | services.vector_store:load:40 - Loaded %d metadata records
+2025-11-11 20:56:58.556 | INFO     | app:startup_event:63 - Vector store ready (model loads on demand)
+2025-11-11 20:59:09.945 | INFO     | routers.chat:compare_chat:85 - Running comparison query
+2025-11-11 20:59:09.947 | INFO     | services.llm:generate_baseline:32 - Generating baseline response
+2025-11-11 20:59:16.831 | INFO     | services.embeddings:_get_model:24 - Loading SentenceTransformer model: %s
+2025-11-11 20:59:20.619 | INFO     | services.llm:generate_with_context:54 - Generating RAG response with %d context characters
+2025-11-11 20:59:48.813 | INFO     | routers.chat:chat:38 - Processing RAG chat request
+2025-11-11 20:59:49.038 | INFO     | services.llm:generate_with_context:54 - Generating RAG response with %d context characters
+2025-11-11 21:01:35.860 | INFO     | app:startup_event:56 - Starting LLM Chat backend
+2025-11-11 21:01:35.866 | INFO     | services.vector_store:load:36 - Loaded FAISS index with %d vectors
+2025-11-11 21:01:35.917 | INFO     | services.vector_store:load:40 - Loaded %d metadata records
+2025-11-11 21:01:35.917 | INFO     | app:startup_event:63 - Vector store ready (model loads on demand)

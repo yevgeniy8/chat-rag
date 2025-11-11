@@ -50,3 +50,11 @@ export interface FileRemovalResponse {
   deleted: boolean;
   vectors_removed: number;
 }
+
+
+export interface FilePreviewResponse {
+  kind: 'html' | 'pdf' | 'text';
+  file_name: string;
+  preview_url?: string | null;
+  html?: string | null;
+}
