@@ -2,23 +2,49 @@
  * Thesis Context: Centralized API typings formalize the experiment's contract between frontend and backend,
  * supporting replicable interactions and analytical traceability of parameters and outputs.
  */
-export interface RetrievedChunk {
-  file: string;
-  snippet: string;
-  score: number;
+export interface ChatModeBlock {
+  message: string;
+  latency: number;
+  mode: 'baseline' | 'rag';
+  semantic_similarity?: number | null;
+}
+
+export interface ChatEvalMetrics {
+  baseline_latency: number;
+  rag_latency: number;
+  semantic_similarity: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatSessionMessage {
+  prompt: string;
+  timestamp: string;
+  baseline: ChatModeBlock;
+  rag: ChatModeBlock;
+}
+
+export interface ChatSession {
+  session_id: string;
+  created_at: string;
+  updated_at: string;
+  messages: ChatSessionMessage[];
+  metrics: ChatEvalMetrics;
 }
 
 export interface ChatRequest {
   message: string;
-  use_rag: boolean;
+  session_id?: string;
   top_k?: number;
 }
 
-export interface ChatResponse {
-  message: string;
-  mode: 'rag' | 'baseline';
-  retrieved_context: RetrievedChunk[];
-  avg_similarity?: number | null;
+export interface ChatDualResponse {
+  session_id: string;
+  prompt: string;
+  timestamp: string;
+  baseline: ChatModeBlock;
+  rag: ChatModeBlock;
+  metrics: ChatEvalMetrics;
 }
 
 export interface CompareRequest {
