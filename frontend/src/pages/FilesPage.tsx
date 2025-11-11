@@ -2,11 +2,20 @@
  * Thesis Context: Files page guides participants through corpus ingestion, clarifying how raw documents feed
  * the RAG pipeline and ensuring repeatable data preparation across trials.
  */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import FileUpload from '../components/FileUpload';
+import FilesList from '../components/FilesList';
 
 const FilesPage: React.FC = () => {
-  const [lastIngest, setLastIngest] = useState<{ fileName: string; chunks: number } | null>(null);
+  const [lastIngest, setLastIngest] = useState<{ fileName: string; chunks: number }[] | null>(null);
+  const summary = useMemo(() => {
+    if (!lastIngest || lastIngest.length === 0) {
+      return null;
+    }
+    const totalChunks = lastIngest.reduce((acc, item) => acc + item.chunks, 0);
+    const names = lastIngest.map((item) => `${item.fileName} (${item.chunks})`).join(', ');
+    return { totalChunks, names, count: lastIngest.length };
+  }, [lastIngest]);
 
   return (
     <div className="space-y-6">
@@ -18,11 +27,12 @@ const FilesPage: React.FC = () => {
         </p>
       </section>
       <FileUpload onIngestComplete={setLastIngest} />
-      {lastIngest && (
+      {summary && (
         <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          Last indexed <strong>{lastIngest.fileName}</strong> into {lastIngest.chunks} searchable chunks.
+          Indexed {summary.count} file{summary.count === 1 ? '' : 's'} ({summary.names}) totaling {summary.totalChunks} searchable chunks.
         </div>
       )}
+      <FilesList />
     </div>
   );
 };

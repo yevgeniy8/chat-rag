@@ -1,15 +1,12 @@
 """schemas/chat.py
 ==================
-Pydantic models used by the chat endpoint to validate requests and responses.
-"""
+Pydantic models used by the chat endpoint to validate requests and responses."""
 
 from __future__ import annotations
 
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-
-from settings import settings
 
 
 class ChatRequest(BaseModel):
@@ -35,3 +32,14 @@ class ChatResponse(BaseModel):
     mode: str
     retrieved_context: List[RetrievedContext]
     avg_similarity: float
+
+
+class CompareRequest(BaseModel):
+    query: str
+
+
+class CompareResponse(BaseModel):
+    baseline: str
+    rag: str
+    latency: int
+    similarity: float
