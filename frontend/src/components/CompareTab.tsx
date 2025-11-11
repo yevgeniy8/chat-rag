@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { compareMessage } from '../api/chat';
-import { CompareResponse } from '../types/api';
+import { ChatCompareResponse } from '../types/api';
 
 const CompareTab: React.FC = () => {
   const [query, setQuery] = useState('');
-  const [result, setResult] = useState<CompareResponse | null>(null);
+  const [result, setResult] = useState<ChatCompareResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +19,7 @@ const CompareTab: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await compareMessage({ query });
+      const response = await compareMessage(query);
       setResult(response);
     } catch (apiError) {
       setError('Comparison failed. Ensure the backend is reachable.');
@@ -57,41 +57,50 @@ const CompareTab: React.FC = () => {
       {result && (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Baseline</h3>
-              <div className="mt-3 text-sm text-gray-800">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm max-w-none">
-                  {result.baseline}
-                </ReactMarkdown>
-              </div>
-            </div>
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">RAG</h3>
-              <div className="mt-3 text-sm text-gray-800">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm max-w-none">
-                  {result.rag}
-                </ReactMarkdown>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm">
-            {(() => {
-              const formattedSimilarity = Number.isFinite(result.similarity)
-                ? result.similarity.toFixed(2)
-                : 'N/A';
-              return (
-                <div className="flex flex-wrap items-center gap-4">
-                  <span>
-                    Latency:
-                    <strong className="ml-1 text-gray-800">{result.latency} ms</strong>
-                  </span>
-                  <span>
-                    Semantic similarity:
-                    <strong className="ml-1 text-gray-800">{formattedSimilarity}</strong>
-                  </span>
+            <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Baseline</h3>
+                <div className="mt-3 text-sm text-gray-800">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm max-w-none">
+                    {result.baseline.message}
+                  </ReactMarkdown>
                 </div>
-              );
-            })()}
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-gray-600">
+                <p>
+                  Latency:
+                  <strong className="ml-1 text-gray-800">{result.baseline.metrics.latency_ms} ms</strong>
+                </p>
+                <p className="mt-1">
+                  Semantic similarity:
+                  <strong className="ml-1 text-gray-800">
+                    {result.baseline.metrics.semantic_similarity.toFixed(2)}
+                  </strong>
+                </p>
+              </div>
+            </div>
+            <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">RAG</h3>
+                <div className="mt-3 text-sm text-gray-800">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm max-w-none">
+                    {result.rag.message}
+                  </ReactMarkdown>
+                </div>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-gray-600">
+                <p>
+                  Latency:
+                  <strong className="ml-1 text-gray-800">{result.rag.metrics.latency_ms} ms</strong>
+                </p>
+                <p className="mt-1">
+                  Semantic similarity:
+                  <strong className="ml-1 text-gray-800">
+                    {result.rag.metrics.semantic_similarity.toFixed(2)}
+                  </strong>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

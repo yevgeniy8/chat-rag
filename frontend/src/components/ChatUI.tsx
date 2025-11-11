@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm';
 import { sendMessage } from '../api/chat';
 import RagToggle from './RagToggle';
 import RetrievedContext from './RetrievedContext';
-import { ChatResponse, RetrievedChunk } from '../types/api';
+import { ChatResponse, RetrievedContext as RetrievedContextType } from '../types/api';
 
 type Role = 'user' | 'assistant';
 
@@ -26,7 +26,7 @@ const ChatUI: React.FC = () => {
   const [topK, setTopK] = useState<number>(3);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [retrievedChunks, setRetrievedChunks] = useState<RetrievedChunk[]>([]);
+  const [retrievedChunks, setRetrievedChunks] = useState<RetrievedContextType[]>([]);
   const [avgSimilarity, setAvgSimilarity] = useState<number | null | undefined>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
