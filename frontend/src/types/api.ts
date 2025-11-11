@@ -10,32 +10,21 @@ export interface RetrievedContext {
 
 export interface ChatRequest {
   message: string;
-  use_rag: boolean;
   top_k?: number;
-  compare?: boolean;
 }
 
-export interface ChatResponse {
-  message: string;
-  mode: 'rag' | 'baseline';
+export interface ChatAnalysisResponse {
+  baseline_message: string;
+  rag_message: string;
+  baseline_latency: number;
+  rag_latency: number;
+  baseline_tokens: number;
+  rag_tokens: number;
+  cosine_similarity: number;
+  bleu: number;
+  rouge: number;
+  avg_similarity: number;
   retrieved_context: RetrievedContext[];
-  avg_similarity?: number | null;
-}
-
-export interface ModeMetrics {
-  latency_ms: number;
-  semantic_similarity: number;
-}
-
-export interface ModeAnswer {
-  message: string;
-  retrieved_context: RetrievedContext[];
-  metrics: ModeMetrics;
-}
-
-export interface ChatCompareResponse {
-  baseline: ModeAnswer;
-  rag: ModeAnswer;
 }
 
 export interface UploadResponse {

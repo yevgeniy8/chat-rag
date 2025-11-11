@@ -20,6 +20,7 @@ def retrieve(query: str, top_k: int) -> List[Dict[str, object]]:
     query_vector = embed_query(query)
     store = get_vector_store()
     hits = store.search(query_vector, top_k)
+    hits.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
     return hits
 
 

@@ -31,6 +31,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isDragActive, setIsDragActive] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+  const [previewItem, setPreviewItem] = useState<{
+    name: string;
+    kind: 'pdf' | 'text' | 'word' | 'unsupported';
+    url?: string;
+    content?: string;
+  } | null>(null);
 
   const hasFilesReady = uploads.some((item) => item.status === 'pending' || item.status === 'error');
 
@@ -91,6 +98,41 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
 
   const removeUpload = (id: string) => {
     setUploads((current) => current.filter((item) => item.id !== id));
+  };
+
+  const openPreview = (item: UploadItem) => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    const lower = item.file.name.toLowerCase();
+    if (lower.endsWith('.pdf')) {
+      const objectUrl = URL.createObjectURL(item.file);
+      previewUrlRef.current = objectUrl;
+      setPreviewItem({ name: item.file.name, kind: 'pdf', url: objectUrl });
+      return;
+    }
+    if (lower.endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviewItem({ name: item.file.name, kind: 'text', content: String(reader.result ?? '') });
+      };
+      reader.readAsText(item.file);
+      return;
+    }
+    if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
+      setPreviewItem({ name: item.file.name, kind: 'word' });
+      return;
+    }
+    setPreviewItem({ name: item.file.name, kind: 'unsupported' });
+  };
+
+  const closePreview = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPreviewItem(null);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -159,6 +201,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
     if (inputRef.current) {
       inputRef.current.value = '';
     }
+    closePreview();
   };
 
   const dragClasses = useMemo(() => {
@@ -229,8 +272,17 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
                   style={{ width: `${item.progress}%` }}
                 ></div>
               </div>
-              <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
-                <span className="capitalize">{item.status}</span>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
+                <div className="flex items-center gap-2">
+                  <span className="capitalize">{item.status}</span>
+                  <button
+                    type="button"
+                    onClick={() => openPreview(item)}
+                    className="rounded-md border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-slate-50"
+                  >
+                    Preview
+                  </button>
+                </div>
                 {item.error && <span className="text-red-500">{item.error}</span>}
               </div>
             </li>
@@ -258,6 +310,44 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
 
       <p className="text-sm text-gray-600">{statusMessage}</p>
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {previewItem && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={closePreview}>
+          <div
+            className="relative h-[80vh] w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closePreview}
+              className="absolute right-4 top-4 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-200"
+            >
+              Close
+            </button>
+            <h3 className="text-sm font-semibold text-gray-800">{previewItem.name}</h3>
+            <div className="mt-4 h-[90%] overflow-hidden rounded-lg border border-gray-100 bg-slate-50">
+              {previewItem.kind === 'pdf' && previewItem.url ? (
+                <iframe title={previewItem.name} src={previewItem.url} className="h-full w-full" />
+              ) : previewItem.kind === 'text' ? (
+                <pre className="h-full w-full overflow-auto bg-white p-4 text-xs text-gray-700">
+                  {previewItem.content}
+                </pre>
+              ) : previewItem.kind === 'word' ? (
+                <div className="flex h-full flex-col items-center justify-center p-6 text-center text-sm text-gray-600">
+                  <p className="font-medium text-gray-800">Preview available after upload</p>
+                  <p className="mt-2">
+                    Once ingested, open the file from the list below to view it through the Google Docs viewer.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex h-full items-center justify-center p-6 text-sm text-gray-600">
+                  Preview not available for this file type.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

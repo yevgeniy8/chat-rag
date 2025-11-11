@@ -7,7 +7,6 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import FilesPage from './pages/FilesPage';
 import ChatPage from './pages/ChatPage';
-import ComparePage from './pages/ComparePage';
 import { useAppDispatch } from './store/hooks';
 import { fetchFiles } from './store/filesSlice';
 
@@ -34,9 +33,6 @@ const App: React.FC = () => {
               <Link className="hover:text-blue-600" to="/chat">
                 Chat
               </Link>
-              <Link className="hover:text-blue-600" to="/compare">
-                Compare
-              </Link>
             </div>
           </nav>
         </header>
@@ -45,7 +41,6 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/files" element={<FilesPage />} />
             <Route path="/chat" element={<ChatPage />} />
-            <Route path="/compare" element={<ComparePage />} />
           </Routes>
         </main>
         <footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">

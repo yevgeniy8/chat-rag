@@ -12,21 +12,13 @@ const Home: React.FC = () => {
       accent: 'bg-blue-50 text-blue-700 border-blue-200',
     },
     {
-      title: 'Chat — Adaptive Conversational Lab',
+      title: 'Analysis — Baseline vs. RAG',
       description:
-        'Hold a dialogue with the model, switch retrieval on or off, and watch how grounded context reshapes tone, detail, and confidence in every reply.',
+        'Trigger simultaneous baseline and RAG generations to quantify latency, similarity, and lexical overlap. Export ready-to-use visuals for your thesis report.',
       to: '/chat',
-      action: 'Open the lab',
+      action: 'Start comparing',
       accent: 'bg-purple-50 text-purple-700 border-purple-200',
-    },
-    {
-      title: 'Compare — Evidence vs. Intuition',
-      description:
-        'Generate side-by-side answers with and without retrieval. Annotate the differences and capture the moments where citations change the narrative.',
-      to: '/compare',
-      action: 'Run a head-to-head',
-      accent: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    },
+    }
   ];
 
   return (
@@ -66,9 +58,8 @@ const Home: React.FC = () => {
         </div>
         <div className="flex flex-col justify-center space-y-3 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">
           <p>
-            Three dedicated pages guide you through the experiment. Start by stocking the knowledge base, then
-            stress-test the assistant in real conversations, and finally capture quantitative and qualitative
-            differences between retrieval-on and retrieval-off runs.
+            Two focused workspaces guide the study: curate the knowledge base via document uploads and run
+            analytical comparisons that contrast baseline and retrieval-augmented answers with exportable charts.
           </p>
           <p className="font-medium text-slate-800">
             Ready to explore? Jump into any of the experiences below – each one is crafted to reveal how grounding
@@ -102,9 +93,9 @@ const Home: React.FC = () => {
       <footer className="rounded-2xl border border-slate-200 bg-slate-900 p-8 text-slate-100">
         <h4 className="text-lg font-semibold">How it all comes together</h4>
         <p className="mt-2 text-sm leading-relaxed text-slate-200">
-          Uploading files seeds the vector store, the chat interface orchestrates retrieval and generation, and the
-          comparison arena helps you document the lift that grounded answers provide. Experiment, iterate, and
-          capture insights that move your thesis – or product roadmap – forward.
+          Uploading files seeds the vector store, and the analytical chat interface orchestrates retrieval and
+          baseline generations side by side so you can document the lift grounded answers provide. Experiment,
+          iterate, and capture insights that move your thesis – or product roadmap – forward.
         </p>
       </footer>
     </div>
