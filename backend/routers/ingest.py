@@ -85,5 +85,10 @@ async def ingest_file(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
 
-    chunks_ingested = await run_in_threadpool(_ingest_file, file_path, settings)
+    try:
+        chunks_ingested = await run_in_threadpool(_ingest_file, file_path, settings)
+    except ValueError as exc:
+        raise HTTPException(status_code=415, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     return IngestResponse(chunks=chunks_ingested)

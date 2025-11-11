@@ -3,10 +3,10 @@
  * and allowing evaluators to audit alignment between retrieved snippets and model responses.
  */
 import React from 'react';
-import { RetrievedChunk } from '../types/api';
+import { RetrievedContext as RetrievedContextType } from '../types/api';
 
 interface RetrievedContextProps {
-  chunks: RetrievedChunk[];
+  chunks: RetrievedContextType[];
   avgSimilarity?: number | null;
 }
 

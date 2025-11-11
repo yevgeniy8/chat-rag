@@ -4,7 +4,7 @@ Pydantic models used by the chat endpoint to validate requests and responses."""
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -13,8 +13,9 @@ class ChatRequest(BaseModel):
     """Incoming user question and configuration flags."""
 
     message: str
-    use_rag: bool
+    use_rag: bool = True
     top_k: Optional[int] = Field(default=None, description="How many chunks to retrieve")
+    compare: bool = False
 
 
 class RetrievedContext(BaseModel):
@@ -29,17 +30,21 @@ class ChatResponse(BaseModel):
     """Structured response returned to the frontend."""
 
     message: str
-    mode: str
+    mode: Literal["rag", "baseline"]
     retrieved_context: List[RetrievedContext]
     avg_similarity: float
 
+class ModeMetrics(BaseModel):
+    latency_ms: int
+    semantic_similarity: float
 
-class CompareRequest(BaseModel):
-    query: str
+
+class ModeAnswer(BaseModel):
+    message: str
+    retrieved_context: List[RetrievedContext] = Field(default_factory=list)
+    metrics: ModeMetrics
 
 
-class CompareResponse(BaseModel):
-    baseline: str
-    rag: str
-    latency: int
-    similarity: float
+class ChatCompareResponse(BaseModel):
+    baseline: ModeAnswer
+    rag: ModeAnswer
