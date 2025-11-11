@@ -33,32 +33,6 @@ cp .env.example .env
 # set REACT_APP_API_BASE_URL=http://localhost:8000`}
         </pre>
       </section>
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold text-gray-900">Why this RAG lab stands out</h2>
-        <div className="grid gap-3 text-sm text-gray-600 md:grid-cols-2">
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 shadow-sm">
-            <h3 className="text-base font-semibold text-blue-900">Transparent document trail</h3>
-            <p className="mt-1">
-              Every upload now records a previewable text trace so you can quickly validate corpus quality before it
-              hits the vector store.
-            </p>
-          </div>
-          <div className="rounded-lg border border-purple-100 bg-purple-50 p-4 shadow-sm">
-            <h3 className="text-base font-semibold text-purple-900">Legacy format resilience</h3>
-            <p className="mt-1">
-              The ingestion stack handles PDF, DOCX, and even classic DOC files using textract/antiword fallbacks—perfect
-              for mining archival research notes.
-            </p>
-          </div>
-          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 shadow-sm md:col-span-2">
-            <h3 className="text-base font-semibold text-emerald-900">RAG insight snapshot</h3>
-            <p className="mt-1">
-              Track how retrieval enriches responses by comparing grounding citations side-by-side. Teams have reported a
-              35% boost in answer verifiability when previews are reviewed before chatting.
-            </p>
-          </div>
-        </div>
-      </section>
       <div className="flex flex-wrap gap-4">
         <Link
           to="/files"

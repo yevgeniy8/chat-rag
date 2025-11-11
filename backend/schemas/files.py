@@ -10,18 +10,12 @@ from pydantic import BaseModel
 
 
 class FileInfo(BaseModel):
-    file_id: str
-    filename: str
-    file_type: str
+    name: str
+    size: int
     uploaded_at: datetime
-    preview_url: str
 
 
 class FileRemovalResponse(BaseModel):
     deleted: bool
     vectors_removed: int
-
-
-class FilePreviewResponse(BaseModel):
-    content: str
 

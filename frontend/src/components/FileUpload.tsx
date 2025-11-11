@@ -3,7 +3,6 @@
  * observable for auditors and ensuring experimenters can trace RAG knowledge sources.
  */
 import React, { useRef, useState } from 'react';
-import type { AxiosError } from 'axios';
 import { ingest, uploadFile } from '../api/ingest';
 import { useAppDispatch } from '../store/hooks';
 import { fetchFiles } from '../store/filesSlice';
@@ -18,13 +17,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
   const [status, setStatus] = useState<string>('Awaiting selection');
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [progressByFile, setProgressByFile] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files ? Array.from(event.target.files) : [];
     setFiles(selected);
-    setProgressByFile({});
     if (selected.length === 0) {
       setStatus('Awaiting selection');
     } else if (selected.length === 1) {
@@ -47,33 +44,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
     try {
       for (const file of files) {
         setStatus(`Uploading ${file.name}...`);
-        setProgressByFile((prev) => ({ ...prev, [file.name]: 'Uploading…' }));
         const uploadResult = await uploadFile(file);
         setStatus(`Ingesting ${file.name}...`);
-        setProgressByFile((prev) => ({ ...prev, [file.name]: 'Ingesting…' }));
         const ingestResult = await ingest(uploadResult.file_id);
         results.push({ fileName: file.name, chunks: ingestResult.chunks });
-        setProgressByFile((prev) => ({
-          ...prev,
-          [file.name]: `Ingested with ${ingestResult.chunks} chunk${
-            ingestResult.chunks === 1 ? '' : 's'
-          } ready for search.`
-        }));
       }
       setStatus(`Processed ${results.length} file${results.length === 1 ? '' : 's'} successfully.`);
       onIngestComplete?.(results);
-      await dispatch(fetchFiles()).unwrap();
+      dispatch(fetchFiles());
       setFiles([]);
       if (inputRef.current) {
         inputRef.current.value = '';
       }
     } catch (uploadError) {
-      let message = 'Ingestion failed. Please inspect backend logs for diagnostic replication.';
-      const axiosError = uploadError as AxiosError<{ detail?: string }>;
-      if (axiosError.response?.data?.detail) {
-        message = axiosError.response.data.detail;
-      }
-      setError(message);
+      console.log("uploadError", uploadError)
+      setError('Ingestion failed. Please inspect backend logs for diagnostic replication.');
       setStatus('Upload interrupted. Some documents may not be indexed.');
     } finally {
       setIsProcessing(false);
@@ -101,15 +86,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
         {isProcessing ? 'Indexing…' : 'Upload & Ingest'}
       </button>
       <p className="text-sm text-gray-600">{status}</p>
-      {Object.keys(progressByFile).length > 0 && (
-        <ul className="space-y-1 text-xs text-gray-600">
-          {Object.entries(progressByFile).map(([name, message]) => (
-            <li key={name}>
-              <span className="font-semibold text-gray-700">{name}:</span> {message}
-            </li>
-          ))}
-        </ul>
-      )}
       {error && <p className="text-sm text-red-500">{error}</p>}
     </form>
   );
