@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import ChatUI from '../components/ChatUI';
+import ChatSidebar from '../components/ChatSidebar';
 
 const ChatPage: React.FC = () => {
   return (
@@ -15,8 +16,11 @@ const ChatPage: React.FC = () => {
           factual grounding and context usage for thesis reporting.
         </p>
       </section>
-      <div className="flex-1">
-        <ChatUI />
+      <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+        <ChatSidebar />
+        <div className="flex-1">
+          <ChatUI />
+        </div>
       </div>
     </div>
   );

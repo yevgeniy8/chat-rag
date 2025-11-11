@@ -55,6 +55,22 @@ class VectorStore:
             self.metadata.append(meta)
         self._persist()
 
+    def remove_by_file(self, file_name: str) -> int:
+        """Remove all vectors originating from a specific file."""
+
+        if not self.metadata:
+            return 0
+
+        remaining: List[Dict[str, object]] = [
+            dict(record) for record in self.metadata if record.get("file") != file_name
+        ]
+        removed = len(self.metadata) - len(remaining)
+        if removed == 0:
+            return 0
+
+        self._rebuild(remaining)
+        return removed
+
     def search(self, query_vector: np.ndarray, top_k: int) -> List[Dict[str, object]]:
         if self.index is None or self.index.ntotal == 0:
             return []
@@ -77,6 +93,42 @@ class VectorStore:
         with self.metadata_path.open("w", encoding="utf-8") as fh:
             for record in self.metadata:
                 fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    def _rebuild(self, records: List[Dict[str, object]]) -> None:
+        """Recreate the FAISS index from the provided metadata records."""
+
+        if not records:
+            self._clear()
+            return
+
+        texts = [record.get("text", "") for record in records]
+        if not any(texts):
+            self._clear()
+            return
+
+        from services import embeddings
+
+        vectors = embeddings.embed_texts(texts)
+        if vectors.size == 0:
+            self._clear()
+            return
+
+        self.index = None
+        self.metadata = []
+        index = self._ensure_index(vectors.shape[1])
+        index.add(self._normalize(vectors))
+        self.metadata.extend(records)
+        self._persist()
+
+    def _clear(self) -> None:
+        """Reset in-memory and on-disk state for the store."""
+
+        self.index = None
+        self.metadata = []
+        if self.index_path.exists():
+            self.index_path.unlink()
+        if self.metadata_path.exists():
+            self.metadata_path.unlink()
 
     @staticmethod
     def _normalize(vectors: np.ndarray) -> np.ndarray:

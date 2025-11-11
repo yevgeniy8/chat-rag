@@ -21,10 +21,32 @@ export interface ChatResponse {
   avg_similarity?: number | null;
 }
 
+export interface CompareRequest {
+  query: string;
+}
+
+export interface CompareResponse {
+  baseline: string;
+  rag: string;
+  latency: number;
+  similarity: number;
+}
+
 export interface UploadResponse {
   file_id: string;
 }
 
 export interface IngestResponse {
   chunks: number;
+}
+
+export interface FileRecord {
+  name: string;
+  size: number;
+  uploaded_at: string;
+}
+
+export interface FileRemovalResponse {
+  deleted: boolean;
+  vectors_removed: number;
 }
