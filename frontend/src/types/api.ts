@@ -41,12 +41,18 @@ export interface IngestResponse {
 }
 
 export interface FileRecord {
-  name: string;
-  size: number;
+  file_id: string;
+  filename: string;
+  file_type: string;
   uploaded_at: string;
+  preview_url: string;
 }
 
 export interface FileRemovalResponse {
   deleted: boolean;
   vectors_removed: number;
+}
+
+export interface FilePreviewResponse {
+  content: string;
 }
