@@ -56,3 +56,14 @@
 2025-11-11 21:01:35.866 | INFO     | services.vector_store:load:36 - Loaded FAISS index with %d vectors
 2025-11-11 21:01:35.917 | INFO     | services.vector_store:load:40 - Loaded %d metadata records
 2025-11-11 21:01:35.917 | INFO     | app:startup_event:63 - Vector store ready (model loads on demand)
+2025-11-17 15:48:24.178 | INFO     | app:startup_event:56 - Starting LLM Chat backend
+2025-11-17 15:48:24.179 | INFO     | app:startup_event:63 - Vector store ready (model loads on demand)
+2025-11-17 15:48:31.462 | INFO     | app:startup_event:56 - Starting LLM Chat backend
+2025-11-17 15:48:31.463 | INFO     | app:startup_event:63 - Vector store ready (model loads on demand)
+2025-11-17 15:53:22.896 | INFO     | app:startup_event:56 - Starting LLM Chat backend
+2025-11-17 15:53:22.896 | INFO     | app:startup_event:63 - Vector store ready (model loads on demand)
+2025-11-17 15:54:37.892 | INFO     | routers.chat:chat:27 - Processing analytical chat request
+2025-11-17 15:54:37.894 | INFO     | services.embeddings:_get_model:24 - Loading SentenceTransformer model: %s
+2025-11-17 15:55:24.086 | INFO     | services.llm:generate_baseline:32 - Generating baseline response
+2025-11-17 15:56:39.533 | INFO     | app:startup_event:56 - Starting LLM Chat backend
+2025-11-17 15:56:39.533 | INFO     | app:startup_event:63 - Vector store ready (model loads on demand)
