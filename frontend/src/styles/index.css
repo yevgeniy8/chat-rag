@@ -1,0 +1,9 @@
+/*
+ * Thesis Context: Tailwind directives enable a consistent utility palette, making UI adjustments traceable across
+ * experimental runs and simplifying documentation of layout decisions.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional thesis-specific utility tweaks can be added here if required. */
