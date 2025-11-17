@@ -3,7 +3,7 @@
  * procedural steps for controlled experiments evaluating retrieval augmentation.
  */
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import Home from './pages/Home';
 import FilesPage from './pages/FilesPage';
 import ChatPage from './pages/ChatPage';
@@ -24,15 +24,32 @@ const App: React.FC = () => {
           <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
             <div className="text-lg font-semibold text-gray-900">LLM Chat Study</div>
             <div className="flex items-center gap-4 text-sm font-medium text-gray-700">
-              <Link className="hover:text-blue-600" to="/">
+              <NavLink
+                to="/"
+                className={({ isActive }) =>
+                  `hover:text-blue-600 ${isActive ? 'text-blue-600 font-semibold' : ''}`
+                }
+              >
                 Home
-              </Link>
-              <Link className="hover:text-blue-600" to="/files">
+              </NavLink>
+
+              <NavLink
+                to="/files"
+                className={({ isActive }) =>
+                  `hover:text-blue-600 ${isActive ? 'text-blue-600 font-semibold' : ''}`
+                }
+              >
                 Files
-              </Link>
-              <Link className="hover:text-blue-600" to="/chat">
+              </NavLink>
+
+              <NavLink
+                to="/chat"
+                className={({ isActive }) =>
+                  `hover:text-blue-600 ${isActive ? 'text-blue-600 font-semibold' : ''}`
+                }
+              >
                 Chat
-              </Link>
+              </NavLink>
             </div>
           </nav>
         </header>

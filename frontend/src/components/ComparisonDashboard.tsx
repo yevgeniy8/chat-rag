@@ -35,8 +35,8 @@ const ComparisonDashboard: React.FC<ComparisonDashboardProps> = ({
       { label: 'Latency (s)', baseline: baselineLatency, rag: ragLatency },
       { label: 'Token count', baseline: baselineTokens, rag: ragTokens, format: (value) => value.toFixed(0) },
       { label: 'Cosine similarity', baseline: 0, rag: cosineSimilarity },
-      { label: 'BLEU', baseline: 0, rag: bleu },
-      { label: 'ROUGE-L', baseline: 0, rag: rouge },
+      // { label: 'BLEU', baseline: 0, rag: bleu },
+      // { label: 'ROUGE-L', baseline: 0, rag: rouge },
       { label: 'Avg. retrieved similarity', baseline: 0, rag: avgSimilarity }
     ],
     [baselineLatency, ragLatency, baselineTokens, ragTokens, cosineSimilarity, bleu, rouge, avgSimilarity]
@@ -175,7 +175,7 @@ const ComparisonDashboard: React.FC<ComparisonDashboardProps> = ({
             </tbody>
           </table>
         </div>
-        <div className="h-64 w-full overflow-hidden rounded-xl border border-gray-100 bg-slate-50 p-4">
+        {/* <div className="h-64 w-full overflow-hidden rounded-xl border border-gray-100 bg-slate-50 p-4">
           <svg viewBox="0 0 800 240" className="h-full w-full">
             <line x1={40} y1={10} x2={40} y2={210} stroke="#d1d5db" strokeWidth={1} />
             <line x1={40} y1={210} x2={760} y2={210} stroke="#d1d5db" strokeWidth={1} />
@@ -222,7 +222,7 @@ const ComparisonDashboard: React.FC<ComparisonDashboardProps> = ({
             RAG
           </span>
           <span className="ml-auto">Max scale value: {maxValue.toFixed(3)}</span>
-        </div>
+        </div> */}
       </div>
     </section>
   );
