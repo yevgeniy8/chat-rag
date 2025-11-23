@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     embedding_model: str = Field(
-        default="sentence-transformers/all-mpnet-base-v2", env="EMBEDDING_MODEL"
+        default="sentence-transformers/all-MiniLM-L6-v2", env="EMBEDDING_MODEL"
     )
     faiss_index_path: Path = Field(
         default=Path("backend/data/vectors/index.faiss"), env="FAISS_INDEX_PATH"
