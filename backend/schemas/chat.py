@@ -14,6 +14,9 @@ class ChatRequest(BaseModel):
 
     message: str
     top_k: Optional[int] = Field(default=None, description="How many chunks to retrieve")
+    model: Optional[str] = Field(default=None, description="Model identifier to use for generation")
+    provider: Optional[str] = Field(default=None, description="LLM provider (openai, openrouter, gemini)")
+    use_rag: bool = Field(default=True, description="Toggle retrieval augmentation on or off")
 
 
 class RetrievedContext(BaseModel):
@@ -37,4 +40,5 @@ class ChatAnalysisResponse(BaseModel):
     bleu: float
     rouge: float
     avg_similarity: float
+    answer_semantic_similarity: float
     retrieved_context: List[RetrievedContext]

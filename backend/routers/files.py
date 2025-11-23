@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 
 from schemas.files import FileInfo, FilePreviewResponse, FileRemovalResponse
-from services import loader
+from services import loader, preview
 from services.utils import safe_join
 from services.vector_store import get_vector_store
 from settings import Settings, get_settings
@@ -63,6 +63,18 @@ async def get_file(filename: str, settings: Settings = Depends(get_settings)) ->
     """Backward-compatible raw file endpoint."""
 
     return await get_raw_file(filename, settings)
+
+
+@router.get("/{file_id}/preview-html")
+async def preview_html(file_id: str, settings: Settings = Depends(get_settings)) -> dict[str, str]:
+    path = _resolve_path(file_id, settings)
+    if path.suffix.lower() != ".docx":
+        raise HTTPException(status_code=415, detail="HTML preview only supported for DOCX files")
+    try:
+        html = preview.docx_to_html(path)
+    except FileNotFoundError as exc:  # pragma: no cover - defensive guard
+        raise HTTPException(status_code=404, detail="File not found") from exc
+    return {"html": html}
 
 
 @router.get("/preview/{filename}", response_model=FilePreviewResponse)

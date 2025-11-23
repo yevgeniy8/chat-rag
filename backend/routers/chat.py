@@ -27,19 +27,39 @@ async def chat(request: ChatRequest, settings: Settings = Depends(get_settings))
     logger.info("Processing analytical chat request")
     top_k = request.top_k or settings.default_top_k
 
-    retrieved = await run_in_threadpool(rag_pipeline.retrieve, request.message, top_k)
-    rag_context = rag_pipeline.build_context(retrieved)
+    provider = request.provider or llm.DEFAULT_PROVIDER
+    model = request.model or llm.DEFAULT_MODEL
+
+    retrieved: List[dict]
+    query_vector = None
+    if request.use_rag:
+        retrieved, query_vector = await run_in_threadpool(rag_pipeline.retrieve, request.message, top_k)
+        rag_context = rag_pipeline.build_context(retrieved)
+    else:
+        retrieved, query_vector, rag_context = [], None, ""
 
     baseline_start = perf_counter()
-    baseline_message = await run_in_threadpool(llm.generate_baseline, request.message)
+    baseline_message = await llm.generate_baseline(request.message, model=model, provider=provider)
     baseline_latency = perf_counter() - baseline_start
 
-    rag_start = perf_counter()
-    rag_message = await run_in_threadpool(llm.generate_with_context, request.message, rag_context)
-    rag_latency = perf_counter() - rag_start
+    if request.use_rag:
+        rag_start = perf_counter()
+        rag_message = await llm.generate_with_context(request.message, rag_context, model=model, provider=provider)
+        rag_latency = perf_counter() - rag_start
+    else:
+        rag_message = "RAG disabled for this request."
+        rag_latency = 0.0
 
     metrics = summarize_metrics(baseline_message, rag_message)
-    avg_similarity = rag_pipeline.average_similarity(retrieved)
+    avg_similarity = 0.0
+    if query_vector is not None:
+        avg_similarity = await run_in_threadpool(
+            rag_pipeline.average_query_chunk_similarity, query_vector, retrieved
+        )
+
+    answer_semantic_similarity = await run_in_threadpool(
+        rag_pipeline.answer_semantic_similarity, rag_message, retrieved[0] if retrieved else None
+    )
 
     retrieved_context = _build_retrieved_context(retrieved)
 
@@ -63,6 +83,7 @@ async def chat(request: ChatRequest, settings: Settings = Depends(get_settings))
         bleu=metrics["bleu"],
         rouge=metrics["rouge"],
         avg_similarity=avg_similarity,
+        answer_semantic_similarity=answer_semantic_similarity,
         retrieved_context=retrieved_context,
     )
 

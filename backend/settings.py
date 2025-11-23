@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     """
 
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
+    openrouter_api_key: Optional[str] = Field(default=None, env="OPENROUTER_API_KEY")
+    gemini_api_key: Optional[str] = Field(default=None, env="GEMINI_API_KEY")
     embedding_model: str = Field(
         default="sentence-transformers/all-mpnet-base-v2", env="EMBEDDING_MODEL"
     )

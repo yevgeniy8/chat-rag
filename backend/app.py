@@ -25,7 +25,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
-from routers import chat, files, health, ingest
+from routers import chat, evaluation, files, health, ingest
 from services.vector_store import get_vector_store
 from settings import settings
 
@@ -74,3 +74,4 @@ app.include_router(health.router)
 app.include_router(ingest.router)
 app.include_router(files.router)
 app.include_router(chat.router)
+app.include_router(evaluation.router)

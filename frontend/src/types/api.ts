@@ -11,6 +11,9 @@ export interface RetrievedContext {
 export interface ChatRequest {
   message: string;
   top_k?: number;
+  model?: string;
+  provider?: string;
+  use_rag?: boolean;
 }
 
 export interface ChatAnalysisResponse {
@@ -24,7 +27,28 @@ export interface ChatAnalysisResponse {
   bleu: number;
   rouge: number;
   avg_similarity: number;
+  answer_semantic_similarity: number;
   retrieved_context: RetrievedContext[];
+}
+
+export interface EvaluationMetrics {
+  baseline: Record<string, unknown>;
+  rag: Record<string, unknown>;
+}
+
+export interface EvaluationSaveRequest {
+  question: string;
+  rag_answer: string;
+  baseline_answer: string;
+  metrics: EvaluationMetrics;
+  retrieved_chunks: unknown[];
+  model_baseline: string;
+  model_rag: string;
+}
+
+export interface EvaluationResult extends EvaluationSaveRequest {
+  id: string;
+  created_at: string;
 }
 
 export interface UploadResponse {

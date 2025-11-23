@@ -20,3 +20,8 @@ export const buildRawFileUrl = (name: string): string => {
   const base = apiClient.defaults.baseURL ?? '';
   return `${base}/files/raw/${encodeURIComponent(name)}`;
 };
+
+export const fetchDocxPreviewHtml = async (name: string): Promise<string> => {
+  const { data } = await apiClient.get<{ html: string }>(`/files/${encodeURIComponent(name)}/preview-html`);
+  return data.html;
+};

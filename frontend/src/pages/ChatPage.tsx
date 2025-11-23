@@ -11,11 +11,24 @@ import { analyzePrompt } from '../api/chat';
 import { ChatAnalysisResponse } from '../types/api';
 
 const ChatPage: React.FC = () => {
+  const MODEL_OPTIONS = [
+    { label: 'GPT-4o Mini', value: 'gpt-4o-mini', provider: 'openai' },
+    { label: 'Llama 3', value: 'llama3', provider: 'openrouter' },
+    { label: 'Claude 3 Haiku', value: 'claude-3-haiku', provider: 'openrouter' }
+  ];
+
   const [question, setQuestion] = useState('');
   const [topK, setTopK] = useState<number>(8);
+  const [selectedModel, setSelectedModel] = useState<string>(MODEL_OPTIONS[0].value);
+  const [useRag, setUseRag] = useState<boolean>(true);
   const [result, setResult] = useState<ChatAnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resolveProvider = (model: string): string => {
+    const match = MODEL_OPTIONS.find((option) => option.value === model);
+    return match?.provider ?? 'openai';
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -26,7 +39,13 @@ const ChatPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const payload = { message: question.trim(), top_k: topK };
+      const payload = {
+        message: question.trim(),
+        top_k: topK,
+        model: selectedModel,
+        provider: resolveProvider(selectedModel),
+        use_rag: useRag
+      };
       const response = await analyzePrompt(payload);
       setResult(response);
     } catch (apiError) {
@@ -49,7 +68,8 @@ const ChatPage: React.FC = () => {
       cosineSimilarity: result.cosine_similarity,
       bleu: result.bleu,
       rouge: result.rouge,
-      avgSimilarity: result.avg_similarity
+      avgSimilarity: result.avg_similarity,
+      answerSemanticSimilarity: result.answer_semantic_similarity
     };
   }, [result]);
 
@@ -79,16 +99,35 @@ const ChatPage: React.FC = () => {
                 placeholder="Ask something your thesis corpus should answer"
               />
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <label htmlFor="top-k" className="font-medium text-gray-700">
-                  Top-k chunks
-                </label>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-center">
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 text-sm text-gray-700">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-gray-800">Model</span>
+                  <span className="text-xs text-gray-500">Choose provider-specific base model.</span>
+                </div>
+                <select
+                  id="model"
+                  value={selectedModel}
+                  onChange={(event) => setSelectedModel(event.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                >
+                  {MODEL_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 text-sm text-gray-700">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-gray-800">Top-k chunks</span>
+                  <span className="text-xs text-gray-500">Retrieval depth for context.</span>
+                </div>
                 <select
                   id="top-k"
                   value={topK}
                   onChange={(event) => setTopK(Number(event.target.value))}
-                  className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
                 >
                   {[4, 6, 8, 10, 12].map((option) => (
                     <option key={option} value={option}>
@@ -97,16 +136,31 @@ const ChatPage: React.FC = () => {
                   ))}
                 </select>
               </div>
-              <div className="flex items-center gap-3">
-                {error ? <p className="text-xs text-red-500">{error}</p> : <span className="text-xs text-gray-400">Latency reported in seconds.</span>}
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 text-sm text-gray-700">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-gray-800">Use RAG</span>
+                  <span className="text-xs text-gray-500">Toggle retrieval augmentation.</span>
+                </div>
                 <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-blue-300"
+                  type="button"
+                  onClick={() => setUseRag((value) => !value)}
+                  className={`${useRag ? 'bg-blue-600' : 'bg-gray-300'} relative inline-flex h-7 w-14 items-center rounded-full transition`}
                 >
-                  {isLoading ? 'Analysing…' : 'Compare answers'}
+                  <span
+                    className={`${useRag ? 'translate-x-7 bg-white' : 'translate-x-1 bg-white'} inline-block h-5 w-5 transform rounded-full shadow transition`}
+                  />
                 </button>
               </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {error ? <p className="text-xs text-red-500">{error}</p> : <span className="text-xs text-gray-400">Latency reported in seconds.</span>}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-blue-300"
+              >
+                {isLoading ? 'Analysing…' : 'Compare answers'}
+              </button>
             </div>
           </form>
 
@@ -131,9 +185,14 @@ const ChatPage: React.FC = () => {
                     <p className="mt-1 text-xs text-gray-500">
                       Latency: {result.rag_latency.toFixed(3)} s · Tokens: {result.rag_tokens}
                     </p>
-                    <div className="mt-1 text-xs text-gray-500">
-                      Avg similarity: {result.avg_similarity.toFixed(3)} · BLEU: {result.bleu.toFixed(3)} · ROUGE-L:{' '}
-                      {result.rouge.toFixed(3)} · Cosine: {result.cosine_similarity.toFixed(3)}
+                    <div className="mt-1 text-xs text-gray-500 space-y-1">
+                      <div>
+                        Avg similarity: {result.avg_similarity.toFixed(3)} · BLEU: {result.bleu.toFixed(3)} · ROUGE-L:{' '}
+                        {result.rouge.toFixed(3)}
+                      </div>
+                      <div>
+                        Cosine: {result.cosine_similarity.toFixed(3)} · Semantic: {result.answer_semantic_similarity.toFixed(3)}
+                      </div>
                     </div>
                   </header>
                   <div className="prose prose-sm max-w-none text-gray-800">

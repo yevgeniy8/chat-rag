@@ -9,6 +9,7 @@ interface ComparisonDashboardProps {
   bleu: number;
   rouge: number;
   avgSimilarity: number;
+  answerSemanticSimilarity: number;
 }
 
 interface TableRow {
@@ -28,7 +29,8 @@ const ComparisonDashboard: React.FC<ComparisonDashboardProps> = ({
   cosineSimilarity,
   bleu,
   rouge,
-  avgSimilarity
+  avgSimilarity,
+  answerSemanticSimilarity
 }) => {
   const tableRows: TableRow[] = useMemo(
     () => [
@@ -37,9 +39,20 @@ const ComparisonDashboard: React.FC<ComparisonDashboardProps> = ({
       { label: 'Cosine similarity', baseline: 0, rag: cosineSimilarity },
       // { label: 'BLEU', baseline: 0, rag: bleu },
       // { label: 'ROUGE-L', baseline: 0, rag: rouge },
-      { label: 'Avg. retrieved similarity', baseline: 0, rag: avgSimilarity }
+      { label: 'Avg. retrieved similarity', baseline: 0, rag: avgSimilarity },
+      { label: 'Answer semantic similarity', baseline: 0, rag: answerSemanticSimilarity }
     ],
-    [baselineLatency, ragLatency, baselineTokens, ragTokens, cosineSimilarity, bleu, rouge, avgSimilarity]
+    [
+      baselineLatency,
+      ragLatency,
+      baselineTokens,
+      ragTokens,
+      cosineSimilarity,
+      bleu,
+      rouge,
+      avgSimilarity,
+      answerSemanticSimilarity
+    ]
   );
 
   const maxValue = useMemo(() => {

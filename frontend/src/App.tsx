@@ -7,6 +7,9 @@ import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-do
 import Home from './pages/Home';
 import FilesPage from './pages/FilesPage';
 import ChatPage from './pages/ChatPage';
+import Playground from './pages/Playground';
+import Compare from './pages/Compare';
+import History from './pages/History';
 import { useAppDispatch } from './store/hooks';
 import { fetchFiles } from './store/filesSlice';
 
@@ -50,6 +53,33 @@ const App: React.FC = () => {
               >
                 Chat
               </NavLink>
+
+              <NavLink
+                to="/playground"
+                className={({ isActive }) =>
+                  `hover:text-blue-600 ${isActive ? 'text-blue-600 font-semibold' : ''}`
+                }
+              >
+                Playground
+              </NavLink>
+
+              <NavLink
+                to="/compare"
+                className={({ isActive }) =>
+                  `hover:text-blue-600 ${isActive ? 'text-blue-600 font-semibold' : ''}`
+                }
+              >
+                Compare
+              </NavLink>
+
+              <NavLink
+                to="/history"
+                className={({ isActive }) =>
+                  `hover:text-blue-600 ${isActive ? 'text-blue-600 font-semibold' : ''}`
+                }
+              >
+                History
+              </NavLink>
             </div>
           </nav>
         </header>
@@ -58,6 +88,9 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/files" element={<FilesPage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/playground" element={<Playground />} />
+            <Route path="/compare" element={<Compare />} />
+            <Route path="/history" element={<History />} />
           </Routes>
         </main>
         <footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">

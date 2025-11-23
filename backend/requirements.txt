@@ -8,9 +8,9 @@ numpy
 pandas
 pypdf
 docx2txt
-textract
 mammoth
 openai
+httpx
 tqdm
 loguru
 python-dotenv

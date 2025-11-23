@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { buildRawFileUrl, fetchFilePreview } from '../api/files';
+import { buildRawFileUrl, fetchDocxPreviewHtml, fetchFilePreview } from '../api/files';
 import { apiClient } from '../api/client';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { deleteFile, fetchFiles } from '../store/filesSlice';
@@ -13,6 +13,7 @@ const FilesList: React.FC = () => {
   const [previewData, setPreviewData] = useState<FilePreviewResponse | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
+  const [docxHtml, setDocxHtml] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const handleDelete = async (fileName: string) => {
@@ -39,9 +40,14 @@ const FilesList: React.FC = () => {
     setPreviewData(null);
     setPreviewError(null);
     setIsPreviewLoading(true);
+    setDocxHtml(null);
     try {
       const data = await fetchFilePreview(fileName);
       setPreviewData(data);
+      if (fileName.toLowerCase().endsWith('.docx')) {
+        const html = await fetchDocxPreviewHtml(fileName);
+        setDocxHtml(html);
+      }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 415) {
         setPreviewError('Preview not available for this file format.');
@@ -56,6 +62,7 @@ const FilesList: React.FC = () => {
   const closePreview = () => {
     setPreviewFile(null);
     setPreviewData(null);
+    setDocxHtml(null);
     setPreviewError(null);
   };
 
@@ -136,6 +143,9 @@ const FilesList: React.FC = () => {
                   if (lower.endsWith('.pdf')) {
                     const src = previewData.preview_url ? resolvePreviewUrl(previewData.preview_url) : fileUrl;
                     return <iframe title={previewFile} src={src} className="h-full w-full rounded-lg" />;
+                  }
+                  if (lower.endsWith('.docx') && docxHtml) {
+                    return <div className="h-full overflow-auto bg-white p-4" dangerouslySetInnerHTML={{ __html: docxHtml }} />;
                   }
                   if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
                     const googleUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;

@@ -17,7 +17,6 @@ import tempfile
 
 import docx2txt
 import mammoth
-import textract
 from loguru import logger
 from pypdf import PdfReader
 
@@ -91,15 +90,6 @@ def _load_docx(file_path: Path, original_name: str, original_type: str) -> Docum
 
 
 def _load_doc(file_path: Path) -> Document:
-    try:
-        logger.info("Attempting textract ingestion for %s", file_path)
-        raw_bytes = textract.process(str(file_path))
-        text = raw_bytes.decode("utf-8", errors="ignore")
-        normalized = normalize_text(text)
-        return Document(text=normalized, metadata={"file": file_path.name, "type": "doc"})
-    except Exception as exc:  # pragma: no cover - textract failure path is environment dependent
-        logger.warning("Textract failed for %s, falling back to LibreOffice conversion: %s", file_path, exc)
-
     with tempfile.TemporaryDirectory() as tmp_dir:
         try:
             converted = _convert_doc_to_docx(file_path, Path(tmp_dir))
