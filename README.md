@@ -8,7 +8,7 @@ Internal research tool for comparing retrieval-augmented generation (RAG) answer
 
 ```bash
 cd backend
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 uvicorn app:app --reload --port 8000

@@ -2,7 +2,7 @@
 
 Run instructions::
     cd backend
-    python -m venv .venv
+    python3 -m venv .venv
     # Linux/Mac
     source .venv/bin/activate
     # Windows
