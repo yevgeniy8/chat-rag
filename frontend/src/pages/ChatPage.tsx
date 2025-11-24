@@ -1,172 +1,234 @@
-/**
- * Thesis Context: Analytical chat page pairs every prompt with baseline and RAG answers, exposing quantitative
- * metrics so researchers can document how retrieval changes factuality, latency, and textual alignment.
- */
-import React, { useMemo, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import ComparisonDashboard from '../components/ComparisonDashboard';
-import RetrievedContext from '../components/RetrievedContext';
-import { analyzePrompt } from '../api/chat';
-import { ChatAnalysisResponse } from '../types/api';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { runRagQuery } from '../api/rag';
+import { RagQueryResponse, RagSourceChunk } from '../types/api';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sources?: RagSourceChunk[];
+  createdAt: string;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+}
+
+const createMessage = (role: 'user' | 'assistant', content: string, sources?: RagSourceChunk[]): ChatMessage => ({
+  id: crypto.randomUUID(),
+  role,
+  content,
+  sources,
+  createdAt: new Date().toISOString()
+});
 
 const ChatPage: React.FC = () => {
-  const [question, setQuestion] = useState('');
-  const [topK, setTopK] = useState<number>(8);
-  const [result, setResult] = useState<ChatAnalysisResponse | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [conversations, setConversations] = useState<Conversation[]>([
+    { id: 'session-1', title: 'New chat', messages: [] }
+  ]);
+  const [activeId, setActiveId] = useState('session-1');
+  const [prompt, setPrompt] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!question.trim()) {
-      setError('Enter a question to run the analysis.');
-      return;
-    }
+  const activeConversation = useMemo(
+    () => conversations.find((conv) => conv.id === activeId) ?? conversations[0],
+    [activeId, conversations]
+  );
+
+  const scrollToBottom = () => {
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [activeConversation?.messages.length]);
+
+  const startNewConversation = () => {
+    const id = crypto.randomUUID();
+    const newConversation: Conversation = { id, title: 'New chat', messages: [] };
+    setConversations((prev) => [newConversation, ...prev]);
+    setActiveId(id);
+    setPrompt('');
+  };
+
+  const updateConversation = (updater: (messages: ChatMessage[]) => ChatMessage[]) => {
+    setConversations((prev) =>
+      prev.map((conv) => (conv.id === activeId ? { ...conv, messages: updater(conv.messages) } : conv))
+    );
+  };
+
+  const handleSend = async () => {
+    if (!prompt.trim() || !activeConversation) return;
     setIsLoading(true);
     setError(null);
+    const userMessage = createMessage('user', prompt.trim());
+    updateConversation((messages) => [...messages, userMessage]);
+    setPrompt('');
     try {
-      const payload = { message: question.trim(), top_k: topK };
-      const response = await analyzePrompt(payload);
-      setResult(response);
-    } catch (apiError) {
-      console.error(apiError);
-      setError('Unable to reach the backend. Verify the FastAPI service is running.');
+      const response: RagQueryResponse = await runRagQuery({
+        question: userMessage.content,
+        history: activeConversation.messages.map((message) => ({ role: message.role, content: message.content }))
+      });
+      const assistantMessage = createMessage('assistant', response.answer, response.sources);
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === activeId
+            ? {
+                ...conv,
+                title: conv.title === 'New chat' ? userMessage.content.slice(0, 42) : conv.title,
+                messages: [...conv.messages, userMessage, assistantMessage]
+              }
+            : conv
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to contact the RAG endpoint.');
+      updateConversation((messages) => messages.filter((message) => message.id !== userMessage.id));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const metrics = useMemo(() => {
-    if (!result) {
-      return null;
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      void handleSend();
     }
-    return {
-      baselineLatency: result.baseline_latency,
-      ragLatency: result.rag_latency,
-      baselineTokens: result.baseline_tokens,
-      ragTokens: result.rag_tokens,
-      cosineSimilarity: result.cosine_similarity,
-      bleu: result.bleu,
-      rouge: result.rouge,
-      avgSimilarity: result.avg_similarity
-    };
-  }, [result]);
+  };
+
+  const copyMessage = async (content: string) => {
+    await navigator.clipboard.writeText(content);
+  };
 
   return (
-    <div className="flex h-full flex-col gap-6">
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-800">Analytical comparison</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Submit a single question. The backend simultaneously runs baseline and retrieval-augmented generations,
-          reporting latency, token usage, and alignment metrics to quantify retrieval impact.
-        </p>
-      </section>
-
-      <div className="flex flex-1 flex-col gap-6 xl:flex-row">
-        <section className="flex flex-1 flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="analysis-question" className="text-sm font-semibold text-gray-700">
-                Research prompt
-              </label>
-              <textarea
-                id="analysis-question"
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                rows={4}
-                className="mt-2 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                placeholder="Ask something your thesis corpus should answer"
-              />
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <label htmlFor="top-k" className="font-medium text-gray-700">
-                  Top-k chunks
-                </label>
-                <select
-                  id="top-k"
-                  value={topK}
-                  onChange={(event) => setTopK(Number(event.target.value))}
-                  className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-                >
-                  {[4, 6, 8, 10, 12].map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-3">
-                {error ? <p className="text-xs text-red-500">{error}</p> : <span className="text-xs text-gray-400">Latency reported in seconds.</span>}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-blue-300"
-                >
-                  {isLoading ? 'Analysing…' : 'Compare answers'}
-                </button>
-              </div>
-            </div>
-          </form>
-
-          <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
-            {result ? (
-              <>
-                <article className="flex flex-col rounded-xl border border-gray-200 bg-slate-50 p-4 shadow-sm">
-                  <header className="mb-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Baseline</h3>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Latency: {result.baseline_latency.toFixed(3)} s · Tokens: {result.baseline_tokens}
-                    </p>
-                  </header>
-                  <div className="prose prose-sm max-w-none text-gray-800">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.baseline_message}</ReactMarkdown>
-                  </div>
-                </article>
-
-                <article className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <header className="mb-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-600">RAG</h3>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Latency: {result.rag_latency.toFixed(3)} s · Tokens: {result.rag_tokens}
-                    </p>
-                    <div className="mt-1 text-xs text-gray-500">
-                      Avg similarity: {result.avg_similarity.toFixed(3)} · BLEU: {result.bleu.toFixed(3)} · ROUGE-L:{' '}
-                      {result.rouge.toFixed(3)} · Cosine: {result.cosine_similarity.toFixed(3)}
-                    </div>
-                  </header>
-                  <div className="prose prose-sm max-w-none text-gray-800">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.rag_message}</ReactMarkdown>
-                  </div>
-                </article>
-              </>
-            ) : (
-              <div className="col-span-2 flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-slate-50 p-6 text-sm text-gray-500">
-                Run a comparison to populate baseline and RAG answers.
-              </div>
-            )}
-          </div>
-        </section>
-
-        <div className="flex w-full flex-col gap-6 xl:w-[28rem]">
-          {metrics ? (
-            <ComparisonDashboard {...metrics} />
-          ) : (
-            <section className="rounded-2xl border border-dashed border-gray-300 bg-white p-6 text-sm text-gray-500 shadow-sm">
-              Metrics will appear once a comparison has been executed.
-            </section>
-          )}
-
-          <section className="flex-1 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-700">Retrieved context</h3>
-            <p className="mt-1 text-xs text-gray-500">Evidence supplied to the RAG answer.</p>
-            <div className="mt-4 h-[22rem] overflow-hidden">
-              <RetrievedContext chunks={result?.retrieved_context ?? []} avgSimilarity={result?.avg_similarity} />
-            </div>
-          </section>
+    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+      <aside className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-800">Chat history</h2>
+          <button
+            type="button"
+            onClick={startNewConversation}
+            className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-slate-800"
+          >
+            + New
+          </button>
         </div>
-      </div>
+        <div className="mt-3 space-y-2">
+          {conversations.map((conv) => (
+            <button
+              key={conv.id}
+              onClick={() => setActiveId(conv.id)}
+              className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${
+                conv.id === activeId
+                  ? 'border-slate-900 bg-slate-900 text-white'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <div className="line-clamp-2 font-semibold">{conv.title}</div>
+              <p className="text-xs text-slate-400">{conv.messages.length / 2} turn(s)</p>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <section className="flex min-h-[70vh] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <header className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">RAG Chat</p>
+            <h1 className="text-xl font-semibold text-slate-900">Ask questions with grounded responses</h1>
+            <p className="text-sm text-slate-500">
+              Messages include cited chunks from your uploaded documents. Send a message to see the latest retrieval set.
+            </p>
+          </div>
+          {error && <div className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">{error}</div>}
+        </header>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+          {activeConversation?.messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-slate-500">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-slate-900 opacity-20" />
+              <p className="text-sm font-medium text-slate-600">Start the conversation with a question about your knowledge base.</p>
+            </div>
+          ) : (
+            activeConversation?.messages.map((message) => (
+              <div key={message.id} className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <span
+                      className={`h-8 w-8 rounded-full text-center text-base font-bold leading-8 ${
+                        message.role === 'user'
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-gradient-to-br from-blue-500 to-slate-900 text-white'
+                      }`}
+                    >
+                      {message.role === 'user' ? 'You' : 'AI'}
+                    </span>
+                    <span>{new Date(message.createdAt).toLocaleTimeString()}</span>
+                  </div>
+                  {message.role === 'assistant' && (
+                    <button
+                      type="button"
+                      onClick={() => copyMessage(message.content)}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                    >
+                      Copy
+                    </button>
+                  )}
+                </div>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-slate-800">{message.content}</p>
+                {message.sources && message.sources.length > 0 && (
+                  <div className="space-y-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Retrieved chunks</p>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {message.sources.map((source, index) => (
+                        <article
+                          key={`${message.id}-source-${index}`}
+                          className="rounded-lg border border-blue-100 bg-white/70 p-3 text-xs shadow-sm"
+                        >
+                          <p className="font-semibold text-blue-700">{source.source ?? 'Document'} </p>
+                          {source.score !== undefined && (
+                            <p className="text-[11px] text-blue-500">Score: {source.score.toFixed(3)}</p>
+                          )}
+                          <p className="mt-1 text-slate-700">{source.text}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+          <div ref={messageEndRef} />
+        </div>
+
+        <footer className="border-t border-slate-200 px-6 py-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-inner">
+            <textarea
+              placeholder="Ask a question about your documents..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={3}
+              className="w-full resize-none rounded-xl border border-transparent bg-transparent px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-200 focus:ring-0"
+            />
+            <div className="mt-3 flex items-center justify-between">
+              <p className="text-xs text-slate-500">Press Enter to send, Shift + Enter for a new line.</p>
+              <button
+                type="button"
+                onClick={() => void handleSend()}
+                disabled={isLoading || !prompt.trim()}
+                className="rounded-full bg-gradient-to-r from-blue-600 to-slate-900 px-4 py-2 text-sm font-semibold text-white shadow hover:from-blue-500 hover:to-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoading ? 'Generating…' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </footer>
+      </section>
     </div>
   );
 };

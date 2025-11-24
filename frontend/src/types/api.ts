@@ -1,7 +1,3 @@
-/**
- * Thesis Context: Centralized API typings formalize the experiment's contract between frontend and backend,
- * supporting replicable interactions and analytical traceability of parameters and outputs.
- */
 export interface RetrievedContext {
   file: string;
   snippet: string;
@@ -51,4 +47,43 @@ export interface FilePreviewResponse {
   file_name: string;
   preview_url?: string | null;
   html?: string | null;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user?: User;
+}
+
+export interface RagSourceChunk {
+  id?: string;
+  score?: number;
+  source?: string;
+  text: string;
+}
+
+export interface RagChatRequest {
+  question: string;
+  history?: { role: 'user' | 'assistant'; content: string }[];
+}
+
+export interface RagAnswerResponse {
+  answer: string;
+  sources?: RagSourceChunk[];
+}
+
+export interface RagQueryResponse extends RagAnswerResponse {
+  conversation_id?: string;
+}
+
+export interface ComparisonResponse {
+  question: string;
+  baseline: RagAnswerResponse;
+  rag: RagQueryResponse;
+  createdAt?: string;
 }
