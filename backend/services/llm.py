@@ -73,3 +73,15 @@ def generate_with_context(user_query: str, context: str) -> str:
         temperature=0.1,
     )
     return response.choices[0].message.content or ""
+
+
+async def generate_with_prompt(prompt: str) -> str:
+    """Generate a completion using the provided prompt string."""
+
+    client = _get_client()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": prompt}],
+        temperature=0.1,
+    )
+    return response.choices[0].message.content or ""

@@ -26,16 +26,14 @@ class Settings(BaseSettings):
     embedding_model: str = Field(
         default="sentence-transformers/all-MiniLM-L6-v2", env="EMBEDDING_MODEL"
     )
-    faiss_index_path: Path = Field(
-        default=Path("backend/data/vectors/index.faiss"), env="FAISS_INDEX_PATH"
-    )
-    metadata_path: Path = Field(
-        default=Path("backend/data/vectors/meta.jsonl"), env="METADATA_PATH"
-    )
     files_dir: Path = Field(default=Path("backend/data/files"), env="FILES_DIR")
+    faiss_dir: Path = Field(default=Path("backend/data/faiss_indexes"), env="FAISS_DIR")
+    database_path: Path = Field(default=Path("backend/app.db"), env="DATABASE_PATH")
     chunk_size: int = Field(default=400, env="CHUNK_SIZE")
-    chunk_overlap: int = Field(default=120, env="CHUNK_OVERLAP")
+    chunk_overlap: int = Field(default=50, env="CHUNK_OVERLAP")
     default_top_k: int = Field(default=8, env="TOP_K")
+    jwt_secret: str = Field(default="dev-secret", env="JWT_SECRET")
+    jwt_algorithm: str = Field(default="HS256", env="JWT_ALGORITHM")
 
     class Config:
         env_file = ".env"
