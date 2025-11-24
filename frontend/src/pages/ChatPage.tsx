@@ -1,172 +1,149 @@
-/**
- * Thesis Context: Analytical chat page pairs every prompt with baseline and RAG answers, exposing quantitative
- * metrics so researchers can document how retrieval changes factuality, latency, and textual alignment.
- */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import ComparisonDashboard from '../components/ComparisonDashboard';
-import RetrievedContext from '../components/RetrievedContext';
-import { analyzePrompt } from '../api/chat';
-import { ChatAnalysisResponse } from '../types/api';
+import { getChatHistory, runChatQuery, fetchDebugInfo } from '../api/chat';
+import { ChatHistoryItem, RetrievedChunk } from '../types/api';
 
 const ChatPage: React.FC = () => {
-  const [question, setQuestion] = useState('');
-  const [topK, setTopK] = useState<number>(8);
-  const [result, setResult] = useState<ChatAnalysisResponse | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [messages, setMessages] = useState<ChatHistoryItem[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugChunks, setDebugChunks] = useState<RetrievedChunk[]>([]);
+  const endRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  useEffect(() => {
+    const loadHistory = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const history = await getChatHistory();
+        setMessages(history);
+      } catch (err) {
+        setError('Unable to load chat history. Please log in again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!question.trim()) {
-      setError('Enter a question to run the analysis.');
-      return;
-    }
+    if (!input.trim()) return;
+    const userMessage: ChatHistoryItem = { role: 'user', content: input.trim() };
+    const nextHistory = [...messages, userMessage];
+    setMessages(nextHistory);
+    setInput('');
     setIsLoading(true);
     setError(null);
     try {
-      const payload = { message: question.trim(), top_k: topK };
-      const response = await analyzePrompt(payload);
-      setResult(response);
-    } catch (apiError) {
-      console.error(apiError);
-      setError('Unable to reach the backend. Verify the FastAPI service is running.');
+      const response = await runChatQuery({ question: userMessage.content, chat_history: nextHistory });
+      const assistantMessage: ChatHistoryItem = { role: 'assistant', content: response.answer };
+      setMessages([...nextHistory, assistantMessage]);
+      if (response.retrieved_chunks) {
+        setDebugChunks(response.retrieved_chunks);
+      } else {
+        setDebugChunks([]);
+      }
+    } catch (err) {
+      setError('Unable to send message. Verify your token is valid.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const metrics = useMemo(() => {
-    if (!result) {
-      return null;
+  const loadDebug = async () => {
+    try {
+      const chunks = await fetchDebugInfo();
+      setDebugChunks(chunks);
+    } catch (err) {
+      setError('Unable to fetch debug information.');
     }
-    return {
-      baselineLatency: result.baseline_latency,
-      ragLatency: result.rag_latency,
-      baselineTokens: result.baseline_tokens,
-      ragTokens: result.rag_tokens,
-      cosineSimilarity: result.cosine_similarity,
-      bleu: result.bleu,
-      rouge: result.rouge,
-      avgSimilarity: result.avg_similarity
-    };
-  }, [result]);
+  };
 
   return (
-    <div className="flex h-full flex-col gap-6">
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-800">Analytical comparison</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Submit a single question. The backend simultaneously runs baseline and retrieval-augmented generations,
-          reporting latency, token usage, and alignment metrics to quantify retrieval impact.
-        </p>
+    <div className="flex h-full flex-col gap-4">
+      <header className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-800">Chat</h2>
+        <p className="text-sm text-slate-600">Conversations, files, and retrieval stay isolated per user.</p>
+      </header>
+
+      <section className="flex flex-1 flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex-1 space-y-4 overflow-y-auto rounded-md border border-slate-100 bg-slate-50 p-4">
+          {messages.map((message, index) => (
+            <div key={index} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
+              <div
+                className={`max-w-3xl rounded-lg px-4 py-2 text-sm shadow-sm ${
+                  message.role === 'assistant'
+                    ? 'bg-white text-slate-800 border border-slate-200'
+                    : 'bg-blue-600 text-white'
+                }`}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm max-w-none">
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            </div>
+          ))}
+          <div ref={endRef} />
+        </div>
+
+        <form onSubmit={handleSend} className="space-y-3">
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="flex items-end gap-3">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              rows={3}
+              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              placeholder="Ask a question about your uploaded documents"
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="h-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-blue-300"
+            >
+              {isLoading ? 'Sending…' : 'Send'}
+            </button>
+          </div>
+        </form>
       </section>
 
-      <div className="flex flex-1 flex-col gap-6 xl:flex-row">
-        <section className="flex flex-1 flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="analysis-question" className="text-sm font-semibold text-gray-700">
-                Research prompt
-              </label>
-              <textarea
-                id="analysis-question"
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                rows={4}
-                className="mt-2 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                placeholder="Ask something your thesis corpus should answer"
-              />
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <label htmlFor="top-k" className="font-medium text-gray-700">
-                  Top-k chunks
-                </label>
-                <select
-                  id="top-k"
-                  value={topK}
-                  onChange={(event) => setTopK(Number(event.target.value))}
-                  className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-                >
-                  {[4, 6, 8, 10, 12].map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-3">
-                {error ? <p className="text-xs text-red-500">{error}</p> : <span className="text-xs text-gray-400">Latency reported in seconds.</span>}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-blue-300"
-                >
-                  {isLoading ? 'Analysing…' : 'Compare answers'}
-                </button>
-              </div>
-            </div>
-          </form>
-
-          <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
-            {result ? (
-              <>
-                <article className="flex flex-col rounded-xl border border-gray-200 bg-slate-50 p-4 shadow-sm">
-                  <header className="mb-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Baseline</h3>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Latency: {result.baseline_latency.toFixed(3)} s · Tokens: {result.baseline_tokens}
-                    </p>
-                  </header>
-                  <div className="prose prose-sm max-w-none text-gray-800">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.baseline_message}</ReactMarkdown>
-                  </div>
-                </article>
-
-                <article className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <header className="mb-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-600">RAG</h3>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Latency: {result.rag_latency.toFixed(3)} s · Tokens: {result.rag_tokens}
-                    </p>
-                    <div className="mt-1 text-xs text-gray-500">
-                      Avg similarity: {result.avg_similarity.toFixed(3)} · BLEU: {result.bleu.toFixed(3)} · ROUGE-L:{' '}
-                      {result.rouge.toFixed(3)} · Cosine: {result.cosine_similarity.toFixed(3)}
-                    </div>
-                  </header>
-                  <div className="prose prose-sm max-w-none text-gray-800">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.rag_message}</ReactMarkdown>
-                  </div>
-                </article>
-              </>
-            ) : (
-              <div className="col-span-2 flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-slate-50 p-6 text-sm text-gray-500">
-                Run a comparison to populate baseline and RAG answers.
-              </div>
-            )}
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">Retrieved context</h3>
+            <p className="text-xs text-slate-600">Chunks returned from FAISS for this user.</p>
           </div>
-        </section>
-
-        <div className="flex w-full flex-col gap-6 xl:w-[28rem]">
-          {metrics ? (
-            <ComparisonDashboard {...metrics} />
-          ) : (
-            <section className="rounded-2xl border border-dashed border-gray-300 bg-white p-6 text-sm text-gray-500 shadow-sm">
-              Metrics will appear once a comparison has been executed.
-            </section>
-          )}
-
-          <section className="flex-1 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-700">Retrieved context</h3>
-            <p className="mt-1 text-xs text-gray-500">Evidence supplied to the RAG answer.</p>
-            <div className="mt-4 h-[22rem] overflow-hidden">
-              <RetrievedContext chunks={result?.retrieved_context ?? []} avgSimilarity={result?.avg_similarity} />
-            </div>
-          </section>
+          <button
+            type="button"
+            onClick={loadDebug}
+            className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Refresh debug
+          </button>
         </div>
-      </div>
+        {debugChunks.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">Send a message to view retrieved chunks.</p>
+        ) : (
+          <ul className="mt-3 space-y-3 text-sm text-slate-700">
+            {debugChunks.map((chunk, index) => (
+              <li key={index} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>{chunk.source ?? 'snippet'}</span>
+                  <span>Score: {chunk.score.toFixed(3)}</span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-slate-800">{chunk.text}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 };

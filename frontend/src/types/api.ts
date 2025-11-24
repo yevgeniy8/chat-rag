@@ -1,54 +1,37 @@
-/**
- * Thesis Context: Centralized API typings formalize the experiment's contract between frontend and backend,
- * supporting replicable interactions and analytical traceability of parameters and outputs.
- */
-export interface RetrievedContext {
-  file: string;
-  snippet: string;
+export interface RetrievedChunk {
+  text: string;
   score: number;
+  source?: string;
 }
 
-export interface ChatRequest {
-  message: string;
-  top_k?: number;
+export interface ChatHistoryItem {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }
 
-export interface ChatAnalysisResponse {
-  baseline_message: string;
-  rag_message: string;
-  baseline_latency: number;
-  rag_latency: number;
-  baseline_tokens: number;
-  rag_tokens: number;
-  cosine_similarity: number;
-  bleu: number;
-  rouge: number;
-  avg_similarity: number;
-  retrieved_context: RetrievedContext[];
+export interface ChatQueryRequest {
+  question: string;
+  chat_history: ChatHistoryItem[];
 }
 
-export interface UploadResponse {
-  file_id: string;
+export interface ChatQueryResponse {
+  answer: string;
+  chat_history?: ChatHistoryItem[];
+  retrieved_chunks?: RetrievedChunk[];
 }
 
-export interface IngestResponse {
-  chunks: number;
+export interface AuthResponse {
+  token: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  name: string;
 }
 
 export interface FileRecord {
   name: string;
   size: number;
   uploaded_at: string;
-}
-
-export interface FileRemovalResponse {
-  deleted: boolean;
-  vectors_removed: number;
-}
-
-export interface FilePreviewResponse {
-  kind: 'html' | 'pdf' | 'text';
-  file_name: string;
-  preview_url?: string | null;
-  html?: string | null;
 }
