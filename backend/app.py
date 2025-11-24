@@ -25,8 +25,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
-from routers import chat, files, health, ingest
-from services.vector_store import get_vector_store
+from database import engine
+from models import Base
+from routers import health, rag, auth
 from settings import settings
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
@@ -55,12 +56,9 @@ async def startup_event() -> None:
 
     logger.info("Starting LLM Chat backend")
     settings.files_dir.mkdir(parents=True, exist_ok=True)
-    settings.faiss_index_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Lazy-loading strategy: we access the vector store once so it loads if
-    # present, and we schedule the embedding model to load on first usage.
-    get_vector_store()
-    logger.info("Vector store ready (model loads on demand)")
+    settings.faiss_dir.mkdir(parents=True, exist_ok=True)
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database initialized")
 
 
 @app.get("/")
@@ -71,6 +69,5 @@ async def root() -> dict[str, str]:
 
 
 app.include_router(health.router)
-app.include_router(ingest.router)
-app.include_router(files.router)
-app.include_router(chat.router)
+app.include_router(auth.router)
+app.include_router(rag.router)

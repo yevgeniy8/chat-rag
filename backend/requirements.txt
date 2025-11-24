@@ -16,3 +16,6 @@ loguru
 python-dotenv
 nltk
 rouge-score
+sqlalchemy
+passlib[bcrypt]
+pyjwt
