@@ -1,22 +1,19 @@
-import { apiClient } from './client';
+import apiRequest from './apiRequest';
 import { FilePreviewResponse, FileRecord, FileRemovalResponse } from '../types/api';
 
 export const fetchFiles = async (): Promise<FileRecord[]> => {
-  const { data } = await apiClient.get<FileRecord[]>('/files');
-  return data;
+  return apiRequest<FileRecord[]>('/files');
 };
 
 export const removeFile = async (name: string): Promise<FileRemovalResponse> => {
-  const { data } = await apiClient.delete<FileRemovalResponse>(`/files/${encodeURIComponent(name)}`);
-  return data;
+  return apiRequest<FileRemovalResponse>(`/files/${encodeURIComponent(name)}`, { method: 'DELETE' });
 };
 
 export const fetchFilePreview = async (name: string): Promise<FilePreviewResponse> => {
-  const { data } = await apiClient.get<FilePreviewResponse>(`/files/preview/${encodeURIComponent(name)}`);
-  return data;
+  return apiRequest<FilePreviewResponse>(`/files/preview/${encodeURIComponent(name)}`);
 };
 
 export const buildRawFileUrl = (name: string): string => {
-  const base = apiClient.defaults.baseURL ?? '';
+  const base = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:8000';
   return `${base}/files/raw/${encodeURIComponent(name)}`;
 };

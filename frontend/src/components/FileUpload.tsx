@@ -205,18 +205,19 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
   };
 
   const dragClasses = useMemo(() => {
-    const base = 'flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition';
+    const base =
+      'flex h-36 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed transition shadow-inner';
     if (isProcessing) {
-      return `${base} border-gray-200 bg-gray-50 text-gray-400`;
+      return `${base} border-slate-200 bg-slate-50 text-slate-400`;
     }
     if (isDragActive) {
-      return `${base} border-blue-400 bg-blue-50 text-blue-600`;
+      return `${base} border-blue-400 bg-gradient-to-br from-blue-50 to-slate-50 text-blue-700`;
     }
-    return `${base} border-gray-300 bg-gray-50 text-gray-600 hover:border-blue-400`;
+    return `${base} border-slate-300 bg-gradient-to-br from-white to-slate-50 text-slate-600 hover:border-blue-400`;
   }, [isDragActive, isProcessing]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div
         className={dragClasses}
         onDragOver={(event) => {
@@ -243,47 +244,54 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
           className="hidden"
           disabled={isProcessing}
         />
-        <p className="text-sm font-semibold">{isProcessing ? 'Processing uploads…' : 'Drag & drop or click to select files'}</p>
-        <p className="mt-1 text-xs">Supported: PDF, DOCX, DOC, TXT</p>
+        <p className="text-sm font-semibold text-slate-900">
+          {isProcessing ? 'Processing uploads…' : 'Drag & drop or click to select files'}
+        </p>
+        <p className="mt-1 text-xs text-slate-500">Upload multiple documents at once. Supported: PDF, DOCX, DOC, TXT.</p>
       </div>
 
       {uploads.length > 0 && (
         <ul className="space-y-3 text-sm">
           {uploads.map((item) => (
-            <li key={item.id} className="rounded-md border border-gray-200 p-3">
+            <li key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-inner">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-gray-800">{item.file.name}</p>
-                  <p className="text-xs text-gray-500">{(item.file.size / 1024).toFixed(1)} KB</p>
+                  <p className="font-semibold text-slate-900">{item.file.name}</p>
+                  <p className="text-xs text-slate-500">{(item.file.size / 1024).toFixed(1)} KB</p>
                 </div>
                 {item.status === 'pending' && !isProcessing && (
                   <button
                     type="button"
                     onClick={() => removeUpload(item.id)}
-                    className="rounded bg-red-50 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-100"
+                    className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold text-red-600 shadow hover:bg-red-100"
                   >
                     Remove
                   </button>
                 )}
               </div>
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white">
                 <div
-                  className={`h-full rounded-full ${item.status === 'error' ? 'bg-red-400' : item.status === 'complete' ? 'bg-green-400' : 'bg-blue-400'}`}
+                  className={`h-full rounded-full ${item.status === 'error' ? 'bg-red-400' : item.status === 'complete' ? 'bg-green-500' : 'bg-blue-500'}`}
                   style={{ width: `${item.progress}%` }}
                 ></div>
               </div>
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
                 <div className="flex items-center gap-2">
-                  <span className="capitalize">{item.status}</span>
+                  <span className="rounded-full bg-white px-3 py-1 font-semibold capitalize text-slate-700 shadow">
+                    {item.status}
+                  </span>
                   <button
                     type="button"
                     onClick={() => openPreview(item)}
-                    className="rounded-md border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-slate-50"
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
                   >
                     Preview
                   </button>
                 </div>
                 {item.error && <span className="text-red-500">{item.error}</span>}
+                {item.status === 'complete' && !item.error && (
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-[11px] font-semibold text-green-700">Ready</span>
+                )}
               </div>
             </li>
           ))}
@@ -294,7 +302,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
         <button
           type="submit"
           disabled={!hasFilesReady || isProcessing}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-blue-300"
+          className="rounded-full bg-gradient-to-r from-blue-600 to-slate-900 px-4 py-2 text-sm font-semibold text-white shadow hover:from-blue-500 hover:to-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isProcessing ? 'Indexing…' : 'Upload & Ingest'}
         </button>
@@ -302,13 +310,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
           type="button"
           onClick={resetQueue}
           disabled={uploads.length === 0 || isProcessing}
-          className="rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Clear
         </button>
       </div>
 
-      <p className="text-sm text-gray-600">{statusMessage}</p>
+      <p className="text-sm text-slate-600">{statusMessage}</p>
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       {previewItem && (
@@ -327,17 +335,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ onIngestComplete }) => {
             <h3 className="text-sm font-semibold text-gray-800">{previewItem.name}</h3>
             <div className="mt-4 h-[90%] overflow-hidden rounded-lg border border-gray-100 bg-slate-50">
               {previewItem.kind === 'pdf' && previewItem.url ? (
-                <iframe title={previewItem.name} src={previewItem.url} className="h-full w-full" />
+                <iframe title={previewItem.name} src={previewItem.url} className="h-full w-full rounded-lg" />
               ) : previewItem.kind === 'text' ? (
-                <pre className="h-full w-full overflow-auto bg-white p-4 text-xs text-gray-700">
-                  {previewItem.content}
-                </pre>
+                <div className="h-full w-full overflow-auto rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-800 shadow-inner">
+                  <pre className="whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-slate-800">{previewItem.content}</pre>
+                </div>
               ) : previewItem.kind === 'word' ? (
-                <div className="flex h-full flex-col items-center justify-center p-6 text-center text-sm text-gray-600">
-                  <p className="font-medium text-gray-800">Preview available after upload</p>
-                  <p className="mt-2">
-                    Once ingested, open the file from the list below to view it through the Google Docs viewer.
-                  </p>
+                <div className="flex h-full flex-col justify-between rounded-xl border border-slate-200 bg-white p-6 text-sm leading-relaxed text-slate-700 shadow-inner">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-900">DOCX preview</p>
+                    <p>We will render the document through the online viewer once it finishes uploading.</p>
+                  </div>
+                  <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-slate-600">
+                    <p className="font-semibold text-slate-800">Tip</p>
+                    <p className="mt-1">Open the file from the list below after ingestion to see the styled preview.</p>
+                  </div>
                 </div>
               ) : (
                 <div className="flex h-full items-center justify-center p-6 text-sm text-gray-600">

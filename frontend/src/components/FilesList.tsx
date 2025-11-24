@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { buildRawFileUrl, fetchFilePreview } from '../api/files';
-import { apiClient } from '../api/client';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { deleteFile, fetchFiles } from '../store/filesSlice';
 import { FilePreviewResponse } from '../types/api';
@@ -30,7 +29,7 @@ const FilesList: React.FC = () => {
     if (/^https?:/i.test(path)) {
       return path;
     }
-    const base = apiClient.defaults.baseURL ?? '';
+    const base = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:8000';
     return `${base}${path}`;
   };
 
@@ -60,16 +59,16 @@ const FilesList: React.FC = () => {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">Knowledge Base Files</h3>
-          <p className="text-sm text-gray-500">Uploaded documents appear here with quick access for preview or removal.</p>
+          <h3 className="text-lg font-semibold text-slate-900">Knowledge Base Files</h3>
+          <p className="text-sm text-slate-500">Uploaded documents appear here with quick access for preview or removal.</p>
         </div>
         <button
           type="button"
           onClick={() => dispatch(fetchFiles())}
-          className="rounded-md border border-gray-200 px-3 py-1 text-sm font-medium text-gray-600 hover:bg-slate-50"
+          className="rounded-full border border-slate-200 px-3 py-1 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
         >
           Refresh
         </button>
